@@ -1,0 +1,145 @@
+openapi: 3.2.0
+info:
+  title: VideoGen Text API
+  version: 1.0.0
+  description: Programmatically generate images, videos, voiceovers, sound effects, and avatar clips.
+servers:
+- url: https://api.videogen.io
+  description: Production
+security:
+- bearerAuth: []
+tags:
+- name: Text
+  description: Generate text with a general-purpose language model. Synchronous — the response includes the generated text.
+paths:
+  /v1/text/generate:
+    post:
+      tags:
+      - Text
+      operationId: generateText
+      x-fern-audiences:
+      - rest
+      summary: Generate text
+      description: 'Generate text from a prompt using a general-purpose language model. Choose a quality tier with `quality` (`LOW`, `STANDARD`, `HIGH`, or `MAX`). Synchronous: the response includes the generated text. Useful for drafting scripts, titles, descriptions, and other short copy before generating a video.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateTextRequest'
+      responses:
+        '200':
+          description: Generated text.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateTextResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  schemas:
+    ModelQuality:
+      type: string
+      enum:
+      - LOW
+      - STANDARD
+      - HIGH
+      - MAX
+      description: 'AI generation quality tier, shared across every generative feature (image, video, text, and so on). `LOW` is fastest and cheapest, `STANDARD` balances quality and cost, `HIGH` is higher quality, and `MAX` is the highest quality.
+
+
+        When a request omits the quality field, VideoGen falls back to your account''s **Default AI quality** for that feature, which you can change at [Account settings](https://app.videogen.io/settings/account). Not every feature supports every tier; unsupported tiers are rejected with an error (see each field''s description).
+
+        '
+    GenerateTextRequest:
+      type: object
+      required:
+      - prompt
+      properties:
+        prompt:
+          type: string
+          example: Write a 30-second upbeat video script about why the sky is blue.
+          description: The instruction or content to generate text from.
+        system:
+          type:
+          - string
+          - 'null'
+          description: Optional system instructions that steer the model's role, tone, and constraints.
+        quality:
+          $ref: '#/components/schemas/ModelQuality'
+          description: Text generation quality tier. Optional; when omitted, your account's Default AI quality for text is used (change it at https://app.videogen.io/settings/account).
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 2
+          description: Sampling temperature. Higher values produce more varied output. Defaults to the model's default.
+        maxOutputTokens:
+          type: integer
+          minimum: 1
+          maximum: 2000
+          default: 512
+          description: Maximum number of tokens to generate. Defaults to 512.
+    ErrorRequirement:
+      type: object
+      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
+    ApiError:
+      type: object
+      description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
+
+
+        - `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.
+
+
+        Common `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.
+
+        '
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          description: Human-readable error description. For display and logging only; do not branch on its exact text.
+        code:
+          type:
+          - string
+          - 'null'
+          description: Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies.
+        requirement:
+          description: What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.
+          anyOf:
+          - $ref: '#/components/schemas/ErrorRequirement'
+          - type: 'null'
+        internalErrorCode:
+          type:
+          - string
+          - 'null'
+          description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
+    GenerateTextResponse:
+      type: object
+      required:
+      - text
+      properties:
+        text:
+          type: string
+          description: The generated text.
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: API key from [app.videogen.io/api](https://app.videogen.io/api). The full key is only shown once when you create it.

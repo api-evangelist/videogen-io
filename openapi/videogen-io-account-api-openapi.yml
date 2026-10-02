@@ -1,0 +1,116 @@
+openapi: 3.2.0
+info:
+  title: VideoGen Account API
+  version: 1.0.0
+  description: Programmatically generate images, videos, voiceovers, sound effects, and avatar clips.
+servers:
+- url: https://api.videogen.io
+  description: Production
+security:
+- bearerAuth: []
+tags:
+- name: Account
+  description: Look up the account and team behind the API key. Useful as a connection test to confirm a key is valid.
+paths:
+  /v1/me:
+    get:
+      tags:
+      - Account
+      operationId: getMe
+      x-fern-audiences:
+      - rest
+      summary: Get current account
+      description: Return the account and team behind the API key making the request. Takes no parameters. Call it as a connection test to confirm a key is valid and to discover the `teamId` and account `email` a key belongs to.
+      responses:
+        '200':
+          description: The account and team for the authenticated API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  schemas:
+    ApiError:
+      type: object
+      description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
+
+
+        - `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.
+
+
+        Common `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.
+
+        '
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          description: Human-readable error description. For display and logging only; do not branch on its exact text.
+        code:
+          type:
+          - string
+          - 'null'
+          description: Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies.
+        requirement:
+          description: What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.
+          anyOf:
+          - $ref: '#/components/schemas/ErrorRequirement'
+          - type: 'null'
+        internalErrorCode:
+          type:
+          - string
+          - 'null'
+          description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
+    ErrorRequirement:
+      type: object
+      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
+    MeResponse:
+      type: object
+      required:
+      - apiKeyId
+      - apiKeyNickname
+      - email
+      - displayName
+      - teamId
+      properties:
+        apiKeyId:
+          type: string
+          description: The id of the API key used to authenticate this request.
+        apiKeyNickname:
+          type: string
+          description: The nickname given to the API key when it was created.
+        email:
+          type: string
+          description: The email address of the account the API key belongs to.
+        displayName:
+          type:
+          - string
+          - 'null'
+          description: The display name of the account the API key belongs to. `null` if the account has not set one.
+        teamId:
+          type: string
+          description: The id of the team the API key belongs to.
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: API key from [app.videogen.io/api](https://app.videogen.io/api). The full key is only shown once when you create it.

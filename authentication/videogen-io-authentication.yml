@@ -1,0 +1,32 @@
+generated: '2026-10-02'
+method: searched
+generator: extract-docs-artifacts.py (local)
+source: https://docs.videogen.io/authentication.md
+sources:
+- https://docs.videogen.io/authentication.md
+- https://docs.videogen.io/oauth.md
+- https://docs.videogen.io/getting-started.md
+- https://help.videogen.io/en/collections/14592492-getting-started
+description: Authentication methods for VideoGen API
+schemes:
+- type: http-bearer
+  name: API key
+  evidence: Create an API key from the VideoGen dashboard, set the Authorization bearer header, and keep credentials safe with environment variables.
+  location: header
+  header: Authorization
+  how_to_obtain: Create a key in the VideoGen dashboard at https://app.videogen.io/api, copy the displayed key, and store it securely.
+- type: oauth2
+  name: OAuth 2.1
+  evidence: Use OAuth 2.1 (authorization code with PKCE) to let users authorize your application to call the VideoGen API on their behalf.
+  location: header
+  header: Authorization
+  flows:
+  - authorization_code
+  authorize_url: '{authorization_endpoint}'
+  scopes:
+  - email
+  - profile
+  - openid
+  how_to_obtain: Register your application via the developer dashboard at https://app.videogen.io/api to receive a client_id (and client_secret
+    for confidential clients). Then follow the authorization code flow with PKCE as described.
+docs: https://docs.videogen.io/authentication.md

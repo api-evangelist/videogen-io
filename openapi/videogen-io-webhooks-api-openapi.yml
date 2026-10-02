@@ -1,0 +1,256 @@
+openapi: 3.2.0
+info:
+  title: VideoGen Webhooks API
+  version: 1.0.0
+  description: Programmatically generate images, videos, voiceovers, sound effects, and avatar clips.
+servers:
+- url: https://api.videogen.io
+  description: Production
+security:
+- bearerAuth: []
+tags:
+- name: Webhooks
+  description: Register endpoints to receive `tool_execution.*` and `workflow_run.*` events instead of polling.
+paths:
+  /v1/webhooks/endpoints:
+    get:
+      tags:
+      - Webhooks
+      operationId: listWebhookEndpoints
+      x-fern-audiences:
+      - rest
+      summary: List webhooks
+      description: List configured webhook endpoints for your account. Cursor-paginated; see the Pagination guide.
+      parameters:
+      - $ref: '#/components/parameters/PaginationLimit'
+      - $ref: '#/components/parameters/PaginationCursor'
+      responses:
+        '200':
+          description: Configured endpoints
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpointListResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    post:
+      tags:
+      - Webhooks
+      operationId: createWebhookEndpoint
+      x-fern-audiences:
+      - rest
+      summary: Create webhook
+      description: Register a new webhook endpoint to receive `tool_execution.*`, `workflow_run.*`, and `file.*` events. The signing secret is only returned in this response. Store it securely.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebhookEndpointRequest'
+      responses:
+        '201':
+          description: Created; `signingSecret` is only returned in this response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpoint'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/webhooks/endpoints/{endpointId}:
+    delete:
+      tags:
+      - Webhooks
+      operationId: deleteWebhookEndpoint
+      x-fern-audiences:
+      - rest
+      summary: Delete webhook
+      description: Remove a webhook endpoint. It will stop receiving events immediately.
+      parameters:
+      - $ref: '#/components/parameters/WebhookEndpointIdPath'
+      responses:
+        '204':
+          description: Removed
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  schemas:
+    CreateWebhookEndpointRequest:
+      type: object
+      required:
+      - url
+      - events
+      properties:
+        url:
+          type: string
+          format: uri
+          description: HTTPS URL that will receive webhook POST requests.
+        description:
+          type:
+          - string
+          - 'null'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookEventName'
+          description: Webhook event names to subscribe to. Must contain at least one event.
+    ErrorRequirement:
+      type: object
+      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
+    WebhookEndpoint:
+      type: object
+      required:
+      - endpointId
+      - url
+      - events
+      - createdAt
+      properties:
+        endpointId:
+          type: string
+          description: Webhook endpoint id (e.g. `ep_...`).
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookEventName'
+        description:
+          type:
+          - string
+          - 'null'
+        createdAt:
+          type: integer
+          description: Seconds since epoch (Unix timestamp) when the endpoint was created.
+        signingSecret:
+          type: string
+          description: HMAC secret for verifying [Standard Webhooks](https://www.standardwebhooks.com/) signatures. Only returned once on create; store it securely.
+        signingSecretLast4:
+          type: string
+          description: Last four characters of the signing secret, for display purposes.
+    WebhookEndpointListResponse:
+      type: object
+      required:
+      - endpoints
+      - hasMore
+      - nextCursor
+      properties:
+        endpoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookEndpoint'
+        hasMore:
+          type: boolean
+          description: When true, there are more endpoints available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
+        nextCursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
+    ApiError:
+      type: object
+      description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
+
+
+        - `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.
+
+
+        Common `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.
+
+        '
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          description: Human-readable error description. For display and logging only; do not branch on its exact text.
+        code:
+          type:
+          - string
+          - 'null'
+          description: Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies.
+        requirement:
+          description: What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.
+          anyOf:
+          - $ref: '#/components/schemas/ErrorRequirement'
+          - type: 'null'
+        internalErrorCode:
+          type:
+          - string
+          - 'null'
+          description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
+    WebhookEventName:
+      type: string
+      description: All webhook event types. Use when creating or listing webhook endpoints.
+      enum:
+      - tool_execution.succeeded
+      - tool_execution.failed
+      - tool_execution.cancelled
+      - workflow_run.succeeded
+      - workflow_run.failed
+      - workflow_run.cancelled
+      - project_export.succeeded
+      - project_export.failed
+      - project_export.cancelled
+      - assistant_message.succeeded
+      - assistant_message.failed
+      - assistant_message.cancelled
+      - file.upload.completed
+      - file.upload.failed
+      - file.playback_ready
+      - file.download_ready
+      - file.analysis_completed
+      - file.analysis_failed
+  parameters:
+    WebhookEndpointIdPath:
+      name: endpointId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The webhook endpoint id (e.g. `ep_...`) returned by `POST /v1/webhooks/endpoints`.
+    PaginationCursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Opaque pagination cursor returned as `nextCursor` by the previous page. Omit on the first request. Cursors are tied to the endpoint that produced them and must be passed unmodified. See [Pagination](/pagination).
+    PaginationLimit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+      description: Maximum number of items to return in the page. Defaults to 50; capped at 200. See [Pagination](/pagination).
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: API key from [app.videogen.io/api](https://app.videogen.io/api). The full key is only shown once when you create it.

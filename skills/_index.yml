@@ -1,0 +1,41 @@
+generated: '2026-10-02'
+method: generated
+generator: extract-docs-artifacts.py skills (local)
+source: openapi/videogen-io-openapi.json
+skills:
+- file: skills/videogen-io-create-and-retrieve-entity.md
+  name: videogen-io-create-and-retrieve-entity
+  api: openapi/videogen-io-openapi.json
+  operations:
+  - createEntity
+  - getEntity
+- file: skills/videogen-io-create-script-video.md
+  name: videogen-io-create-script-video
+  api: openapi/videogen-io-openapi.json
+  operations:
+  - scriptToVideo
+  - getWorkflowRun
+  - listWorkflowRuns
+- file: skills/videogen-io-export-project.md
+  name: videogen-io-export-project
+  api: openapi/videogen-io-openapi.json
+  operations:
+  - listProjects
+  - getProject
+  - exportProject
+  - listProjectExports
+  - getProjectExport
+- file: skills/videogen-io-manage-webhook-endpoints.md
+  name: videogen-io-manage-webhook-endpoints
+  api: openapi/videogen-io-openapi.json
+  operations:
+  - listWebhookEndpoints
+  - createWebhookEndpoint
+  - deleteWebhookEndpoint
+- file: skills/videogen-io-assistant-chat.md
+  name: videogen-io-assistant-chat
+  api: openapi/videogen-io-openapi.json
+  operations:
+  - startAssistantChat
+  - sendAssistantMessage
+  - getAssistantMessage

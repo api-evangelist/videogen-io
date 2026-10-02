@@ -1,0 +1,109 @@
+generated: '2026-10-02'
+method: searched
+generator: extract-docs-artifacts.py (local)
+source: https://docs.videogen.io/rate-limits.md
+sources:
+- https://docs.videogen.io/rate-limits.md
+name: VideoGen rate limits
+limits:
+- name: POST /v1/tools/*
+  limit_text: 500 requests/hour
+  max: 500
+  window: hour
+  endpoint: POST /v1/tools/*
+- name: GET /v1/tools/executions/{id}
+  limit_text: 5,000 requests/hour
+  max: 5000
+  window: hour
+  endpoint: GET /v1/tools/executions/{id}
+- name: POST /v1/tools/executions/{id}/cancel
+  limit_text: 250 requests/hour
+  max: 250
+  window: hour
+  endpoint: POST /v1/tools/executions/{id}/cancel
+- name: GET /v1/files, GET /v1/files/{id}
+  limit_text: 50,000 requests/hour
+  max: 50000
+  window: hour
+  endpoint: GET /v1/files, GET /v1/files/{id}
+- name: POST /v1/files/{id}/hydrate
+  limit_text: 2,500 requests/hour
+  max: 2500
+  window: hour
+  endpoint: POST /v1/files/{id}/hydrate
+- name: POST /v1/files/upload
+  limit_text: 500 requests/hour
+  max: 500
+  window: hour
+  endpoint: POST /v1/files/upload
+- name: POST /v1/files/search
+  limit_text: 500 requests/hour
+  max: 500
+  window: hour
+  endpoint: POST /v1/files/search
+- name: GET /v1/resources/*
+  limit_text: 2,500 requests/hour
+  max: 2500
+  window: hour
+  endpoint: GET /v1/resources/*
+- name: GET /v1/webhooks/endpoints
+  limit_text: 500 requests/hour
+  max: 500
+  window: hour
+  endpoint: GET /v1/webhooks/endpoints
+- name: POST /v1/webhooks/endpoints
+  limit_text: 10 requests/hour
+  max: 10
+  window: hour
+  endpoint: POST /v1/webhooks/endpoints
+- name: DELETE /v1/webhooks/endpoints/{id}
+  limit_text: 10 requests/hour
+  max: 10
+  window: hour
+  endpoint: DELETE /v1/webhooks/endpoints/{id}
+- name: POST /v1/workflows/*
+  limit_text: 500 requests/hour
+  max: 500
+  window: hour
+  endpoint: POST /v1/workflows/*
+- name: GET /v1/workflows/runs/{id}
+  limit_text: 5,000 requests/hour
+  max: 5000
+  window: hour
+  endpoint: GET /v1/workflows/runs/{id}
+- name: POST /v1/workflows/runs/{id}/cancel
+  limit_text: 250 requests/hour
+  max: 250
+  window: hour
+  endpoint: POST /v1/workflows/runs/{id}/cancel
+- name: GET /v1/projects, GET /v1/projects/{id}
+  limit_text: 2,500 requests/hour
+  max: 2500
+  window: hour
+  endpoint: GET /v1/projects, GET /v1/projects/{id}
+- name: POST /v1/projects/{id}/export
+  limit_text: 500 requests/hour
+  max: 500
+  window: hour
+  endpoint: POST /v1/projects/{id}/export
+- name: GET /v1/projects/{id}/exports/{exportId}
+  limit_text: 5,000 requests/hour
+  max: 5000
+  window: hour
+  endpoint: GET /v1/projects/{id}/exports/{exportId}
+- name: POST /v1/projects/{id}/remix
+  limit_text: 500 requests/hour
+  max: 500
+  window: hour
+  endpoint: POST /v1/projects/{id}/remix
+- name: GET /v1/projects/{id}/remix-actions
+  limit_text: 5,000 requests/hour
+  max: 5000
+  window: hour
+  endpoint: GET /v1/projects/{id}/remix-actions
+headers:
+- X-RateLimit-Limit
+- X-RateLimit-Remaining
+- X-RateLimit-Reset
+exhaustion_status: 429
+docs: https://docs.videogen.io/rate-limits.md

@@ -1,0 +1,240 @@
+openapi: 3.2.0
+info:
+  title: VideoGen Resources API
+  version: 1.0.0
+  description: Programmatically generate images, videos, voiceovers, sound effects, and avatar clips.
+servers:
+- url: https://api.videogen.io
+  description: Production
+security:
+- bearerAuth: []
+tags:
+- name: Resources
+  description: Discover available TTS voices and supported languages to use in requests.
+paths:
+  /v1/resources/tts-voices:
+    get:
+      tags:
+      - Resources
+      operationId: listTtsVoices
+      x-fern-audiences:
+      - rest
+      summary: List TTS voices
+      description: List available text-to-speech voices. Pass a `voiceId` or `displayName` from the response to the text-to-speech endpoint. Cursor-paginated; see the Pagination guide. Pass `query` to filter by voice id, display name, language, accent, or description.
+      parameters:
+      - $ref: '#/components/parameters/PaginationLimit'
+      - $ref: '#/components/parameters/PaginationCursor'
+      - $ref: '#/components/parameters/IncludeDeprecatedVoicesQuery'
+      - $ref: '#/components/parameters/CatalogueQuery'
+      responses:
+        '200':
+          description: List of TTS voices. Pass a `voiceId` or `displayName` to `POST /v1/tools/text-to-speech`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TtsVoiceListResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/resources/languages:
+    get:
+      tags:
+      - Resources
+      operationId: listLanguages
+      x-fern-audiences:
+      - rest
+      summary: List supported languages
+      description: List the languages a project can be translated into. Pass a `languageCode` from the response to the `TRANSLATE_PROJECT` remix action. Returns the full catalogue in a single response (not paginated). Pass `query` to filter by language code or English name.
+      parameters:
+      - $ref: '#/components/parameters/CatalogueQuery'
+      responses:
+        '200':
+          description: List of supported languages. Pass a `languageCode` to a `TRANSLATE_PROJECT` remix action.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LanguageListResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  parameters:
+    CatalogueQuery:
+      name: query
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Optional case-insensitive substring filter across each item's searchable text fields. Omit to return the unfiltered catalogue.
+    PaginationCursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Opaque pagination cursor returned as `nextCursor` by the previous page. Omit on the first request. Cursors are tied to the endpoint that produced them and must be passed unmodified. See [Pagination](/pagination).
+    PaginationLimit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+      description: Maximum number of items to return in the page. Defaults to 50; capped at 200. See [Pagination](/pagination).
+    IncludeDeprecatedVoicesQuery:
+      name: includeDeprecatedVoices
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+      description: When true, includes voices that are deprecated but still callable. Defaults to false.
+  schemas:
+    TtsVoice:
+      type: object
+      description: A text-to-speech voice.
+      required:
+      - voiceId
+      - languageCode
+      - displayName
+      - displayGender
+      - supportsDirectToolExecution
+      - supportsAllLanguages
+      - isDeprecated
+      properties:
+        voiceId:
+          type: string
+          description: Voice id (e.g. `vg_voic_...`). Pass this or `displayName` as `voiceId` to `POST /v1/tools/text-to-speech`.
+        languageCode:
+          type: string
+          description: Locale tag for the voice (e.g. `en-US`, `es-ES`).
+        displayName:
+          type: string
+          description: Human-readable voice name.
+        displayGender:
+          type: string
+          enum:
+          - MALE
+          - FEMALE
+          - NEUTRAL
+          description: Voice gender.
+        accent:
+          type:
+          - string
+          - 'null'
+          description: Accent (e.g. `american`, `british`).
+        description:
+          type:
+          - string
+          - 'null'
+          description: Description of the voice.
+        supportsDirectToolExecution:
+          type: boolean
+          description: When false, this voice cannot be used directly with `POST /v1/tools/text-to-speech`. All voices, regardless of this field, can be used in full video generation workflows such as script-to-video.
+        supportsAllLanguages:
+          type: boolean
+          description: When true, this voice can synthesize text in any language regardless of its `languageCode`. When false, the voice only supports its listed language.
+        isDeprecated:
+          type: boolean
+          description: When true, this voice is deprecated and may be removed in a future API version. Prefer non-deprecated voices for new integrations.
+    TtsVoiceListResponse:
+      type: object
+      required:
+      - ttsVoices
+      - hasMore
+      - nextCursor
+      properties:
+        ttsVoices:
+          type: array
+          items:
+            $ref: '#/components/schemas/TtsVoice'
+        hasMore:
+          type: boolean
+          description: When true, there are more voices available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
+        nextCursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
+    ErrorRequirement:
+      type: object
+      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
+    LanguageListResponse:
+      type: object
+      required:
+      - languages
+      properties:
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Language'
+    Language:
+      type: object
+      required:
+      - languageCode
+      - name
+      description: A language a project can be translated into.
+      properties:
+        languageCode:
+          type: string
+          description: The language code to pass to a `TRANSLATE_PROJECT` remix action (e.g. `es`, `fr`, `ja`).
+        name:
+          type: string
+          description: Human-readable English name of the language (e.g. `Spanish`).
+    ApiError:
+      type: object
+      description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
+
+
+        - `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.
+
+
+        Common `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.
+
+        '
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          description: Human-readable error description. For display and logging only; do not branch on its exact text.
+        code:
+          type:
+          - string
+          - 'null'
+          description: Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies.
+        requirement:
+          description: What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.
+          anyOf:
+          - $ref: '#/components/schemas/ErrorRequirement'
+          - type: 'null'
+        internalErrorCode:
+          type:
+          - string
+          - 'null'
+          description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: API key from [app.videogen.io/api](https://app.videogen.io/api). The full key is only shown once when you create it.

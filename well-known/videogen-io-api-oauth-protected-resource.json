@@ -1,0 +1,1 @@
+{"resource":"https://api.videogen.io","authorization_servers":["https://luobljrujjqjayuuoadj.supabase.co/auth/v1"],"scopes_supported":["email","profile"],"bearer_methods_supported":["header"],"resource_documentation":"https://docs.videogen.io"}

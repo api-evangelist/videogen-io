@@ -1,0 +1,663 @@
+openapi: 3.2.0
+info:
+  title: VideoGen Files API
+  version: 1.0.0
+  description: Programmatically generate images, videos, voiceovers, sound effects, and avatar clips.
+servers:
+- url: https://api.videogen.io
+  description: Production
+security:
+- bearerAuth: []
+tags:
+- name: Files
+  description: List and retrieve metadata for generated files.
+paths:
+  /v1/files:
+    get:
+      tags:
+      - Files
+      operationId: getFiles
+      x-fern-audiences:
+      - rest
+      summary: List files
+      description: 'List files accessible to your team. By default this returns standalone files (direct tool-call outputs and uploads) and omits two categories: export files (the raw output files of your exports) and project files (the generative files created within a project, e.g. each AI image and text-to-speech file in a script-to-video workflow output). Set `includeExportFiles` and/or `includeProjectFiles` to true to include them. Use `selfOnly=true` to restrict results to files created by the calling API key''s user. Files are returned most recently updated first. Cursor-paginated; see the Pagination guide.'
+      parameters:
+      - $ref: '#/components/parameters/PaginationLimit'
+      - $ref: '#/components/parameters/PaginationCursor'
+      - $ref: '#/components/parameters/SelfOnlyQuery'
+      - $ref: '#/components/parameters/IncludeExportFilesQuery'
+      - $ref: '#/components/parameters/IncludeProjectFilesQuery'
+      responses:
+        '200':
+          description: File list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetFilesResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/files/search:
+    post:
+      tags:
+      - Files
+      operationId: searchFiles
+      x-fern-audiences:
+      - rest
+      summary: Search files
+      description: Semantic vector search over your files. Embeds the query text and returns the closest matching files ranked by cosine similarity. Only files with indexed descriptions are searchable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchFilesRequest'
+      responses:
+        '200':
+          description: Search results ordered by descending similarity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchFilesResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/files/{fileId}:
+    get:
+      tags:
+      - Files
+      operationId: getFile
+      x-fern-audiences:
+      - rest
+      summary: Get file
+      description: Retrieve metadata for a single file by its id.
+      parameters:
+      - $ref: '#/components/parameters/FileIdPath'
+      responses:
+        '200':
+          description: File metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileInfo'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/files/upload:
+    post:
+      tags:
+      - Files
+      operationId: createFileUpload
+      x-fern-audiences:
+      - rest
+      summary: Create file upload
+      description: Create a new file and receive a pre-signed upload URL. PUT the file bytes to the returned URL, then poll `GET /v1/files/{fileId}` until the file is ready.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFileUploadRequest'
+      responses:
+        '200':
+          description: Upload instructions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUploadResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/files/{fileId}/hydrate:
+    post:
+      tags:
+      - Files
+      operationId: hydrateFile
+      x-fern-audiences:
+      - rest
+      summary: Hydrate file
+      description: Generate fresh signed URLs for all available renditions of a file. Call this when source URLs are missing or expired. Returns the full file object with populated `downloadSource`, `thumbnailSource`, and `previewSource` (and the convenience root-level `downloadUrl` / `thumbnailUrl`).
+      parameters:
+      - $ref: '#/components/parameters/FileIdPath'
+      responses:
+        '200':
+          description: File with hydrated sources
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileInfo'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/files/{fileId}/archive:
+    post:
+      tags:
+      - Files
+      operationId: archiveFile
+      x-fern-audiences:
+      - rest
+      summary: Archive file
+      description: Archive a file by setting its archived timestamp. Archived files are excluded from list results. Returns the updated file object.
+      parameters:
+      - $ref: '#/components/parameters/FileIdPath'
+      responses:
+        '200':
+          description: Archived file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileInfo'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/files/{fileId}/enable-public-preview:
+    post:
+      tags:
+      - Files
+      operationId: enablePublicPreview
+      x-fern-audiences:
+      - rest
+      summary: Enable public preview
+      description: Enable public preview for a file. Works for any file type. Copies the file to a permanent public URL (`staticPublicPreviewSource`) and, for video and audio, registers a public embed playback id (`publicPlaybackId`) for use with `@videogen/player`. If streaming playback is still processing, the endpoint polls briefly and background processing finishes creating the embed playback id. Returns the updated file.
+      parameters:
+      - $ref: '#/components/parameters/FileIdPath'
+      responses:
+        '200':
+          description: File with public preview enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileInfo'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/files/{fileId}/disable-public-preview:
+    post:
+      tags:
+      - Files
+      operationId: disablePublicPreview
+      x-fern-audiences:
+      - rest
+      summary: Disable public preview
+      description: Disable public preview for a file. Removes the permanent public URL copy and revokes unauthenticated embed streaming access. Authenticated signed URLs remain functional. Returns the updated file.
+      parameters:
+      - $ref: '#/components/parameters/FileIdPath'
+      responses:
+        '200':
+          description: File with public preview disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileInfo'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  schemas:
+    FileType:
+      type: string
+      enum:
+      - IMAGE
+      - VIDEO
+      - AUDIO
+      - PDF
+      - SLIDESHOW
+      - TEXT
+      - LOTTIE
+      description: File type. `TEXT` covers plain-text and editor-interchange documents; `LOTTIE` is a JSON animation.
+    SearchFilesResult:
+      type: object
+      required:
+      - similarity
+      - file
+      properties:
+        similarity:
+          type: number
+          minimum: 0
+          maximum: 1
+          example: 0.82
+          description: Cosine similarity between the query embedding and the file description embedding. Ranges from 0 (no match) to 1 (identical). Values above 0.7 typically indicate strong relevance.
+        file:
+          $ref: '#/components/schemas/FileInfo'
+    FileSource:
+      type: object
+      description: A rendition source for a file (e.g. thumbnail, preview, download). Contains a signed URL and metadata.
+      required:
+      - status
+      properties:
+        status:
+          type: string
+          enum:
+          - pending
+          - ready
+          - failed
+          - skipped
+          description: '`pending`: asset is still processing or has not been hydrated yet. `ready`: signed URL is available. `failed`: rendition generation failed. `skipped`: rendition does not apply to this file type (e.g. thumbnail for audio).'
+        url:
+          type:
+          - string
+          - 'null'
+          description: Signed URL. Present when status is `ready` and file has been recently hydrated. If missing, call the hydrate endpoint.
+        expiresAt:
+          type:
+          - integer
+          - 'null'
+          description: Seconds since epoch (Unix timestamp) when the signed URL expires.
+        width:
+          type:
+          - integer
+          - 'null'
+          description: Rendition width in pixels, when known.
+        height:
+          type:
+          - integer
+          - 'null'
+          description: Rendition height in pixels, when known.
+        fileBytes:
+          type:
+          - integer
+          - 'null'
+          description: File size in bytes, when known.
+    SearchFilesResponse:
+      type: object
+      required:
+      - results
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchFilesResult'
+    TranscriptWord:
+      type: object
+      required:
+      - startSeconds
+      - endSeconds
+      - word
+      description: A single timed word of a transcript.
+      properties:
+        startSeconds:
+          type: number
+          minimum: 0
+          description: Start time of the word in seconds from the beginning of the audio.
+        endSeconds:
+          type: number
+          description: End time of the word in seconds from the beginning of the audio. Must be greater than `startSeconds`.
+        word:
+          type: string
+          description: The spoken word, used verbatim for narration timing and captions.
+    ErrorRequirement:
+      type: object
+      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
+    SearchFilesRequest:
+      type: object
+      required:
+      - query
+      properties:
+        query:
+          type: string
+          description: Natural-language search query. The text is embedded and compared against file description vectors using cosine similarity.
+        numResults:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+          description: Number of results to return (1-100). Defaults to 10.
+        selfOnly:
+          type: boolean
+          default: false
+          description: When true, only files created by the calling API key's user are returned. When false (default), all files accessible to the team are included.
+    ApiError:
+      type: object
+      description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
+
+
+        - `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.
+
+
+        Common `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.
+
+        '
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          description: Human-readable error description. For display and logging only; do not branch on its exact text.
+        code:
+          type:
+          - string
+          - 'null'
+          description: Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies.
+        requirement:
+          description: What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.
+          anyOf:
+          - $ref: '#/components/schemas/ErrorRequirement'
+          - type: 'null'
+        internalErrorCode:
+          type:
+          - string
+          - 'null'
+          description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
+    FileUploadResponse:
+      type: object
+      required:
+      - fileId
+      - uploadUrl
+      properties:
+        fileId:
+          type: string
+          description: The file id to use in subsequent API calls (e.g. `vg_file_...`).
+        uploadUrl:
+          type: string
+          description: Pre-signed URL. PUT the raw file bytes to this URL to complete the upload.
+    GetFilesResponse:
+      type: object
+      required:
+      - files
+      - hasMore
+      - nextCursor
+      properties:
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileInfo'
+        hasMore:
+          type: boolean
+          description: When true, there are more files available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
+        nextCursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
+    CreateFileUploadRequest:
+      type: object
+      required:
+      - displayName
+      properties:
+        type:
+          $ref: '#/components/schemas/FileType'
+          description: The type of file to upload. Optional; when omitted, the type is inferred after upload processing completes.
+        displayName:
+          type: string
+          description: Display name for the uploaded file.
+        isTemporary:
+          type: boolean
+          default: false
+          description: When true, the file is temporary. Temporary files are guaranteed to be available for 24 hours, after which they may be archived at any time. Temporary files are not analyzed (no description, transcript, or embedding will be generated), so they will not appear in search results. Defaults to false.
+        hideFromUi:
+          type: boolean
+          default: false
+          description: When true, the file is hidden from the VideoGen Media page by default. It remains accessible through the API. Defaults to false.
+        transcript:
+          description: Optional pre-computed transcript for an audio or video upload, as timed `words`. When provided, transcription is skipped and caption timing matches your transcript. Ignored for non-audio/video files.
+          anyOf:
+          - $ref: '#/components/schemas/Transcript'
+          - type: 'null'
+    FileAnalysisMetadata:
+      type: object
+      description: 'Background analysis state for a file. Background analysis populates `description`, `transcript`, `durationSeconds`, and the search embedding after a file is uploaded or generated; this object lets you render a progress indicator while it runs (and skip rendering once it''s done).
+
+        '
+      required:
+      - analysisLoadingState
+      - analysisProgressPercentage
+      properties:
+        analysisLoadingState:
+          type: string
+          enum:
+          - UNATTEMPTED
+          - LOADING
+          - FULFILLED
+          - REJECTED
+          description: 'Coarse-grained analysis state.
+
+
+            - `UNATTEMPTED`: analysis has not started yet.
+
+            - `LOADING`: analysis is in progress.
+
+            - `FULFILLED`: analysis completed successfully. `description`, `transcript`, and `durationSeconds` are now populated where applicable for the file''s type.
+
+            - `REJECTED`: analysis failed permanently and will not be retried.
+
+            '
+        analysisProgressPercentage:
+          type: number
+          description: Progress in `[0, 100]`. Always `100` when `analysisLoadingState` is `FULFILLED`. Otherwise the most recent in-flight progress reported by the analysis task (or `0` if no progress has been reported yet).
+        analysisAttemptIndex:
+          type: integer
+          description: Zero-based index of the current analysis task attempt. Only present while analysis is still loading (`UNATTEMPTED` or `LOADING`); omitted once analysis reaches a terminal state.
+    FileInfo:
+      type: object
+      description: Metadata for a generated file. Obtain ids from tool results or `GET /v1/files`.
+      required:
+      - fileId
+      - scope
+      properties:
+        fileId:
+          type: string
+          description: File id (e.g. `vg_file_...`).
+        type:
+          description: File type. Null when the file is still being processed and the type has not yet been determined.
+          anyOf:
+          - $ref: '#/components/schemas/FileType'
+          - type: 'null'
+        scope:
+          type: string
+          enum:
+          - GLOBAL
+          - PROJECT
+          - EXPORT
+          - TEMPORARY
+          - ENTITY
+          description: 'File scope.
+
+
+            - `GLOBAL`: user-uploaded or standalone generated files that persist indefinitely.
+
+            - `PROJECT`: project-specific files (e.g. text-to-speech clips in a generated project).
+
+            - `EXPORT`: project exports.
+
+            - `TEMPORARY`: short-lived files guaranteed to be available for 24 hours, after which they may be archived at any time. Not analyzed (no description, transcript, or embedding).
+
+            - `ENTITY`: files attached to a reusable entity (e.g. a voice sample for an actor), shared across your team.
+
+            '
+        displayName:
+          type: string
+          description: Display name for the file.
+        description:
+          type:
+          - string
+          - 'null'
+        durationSeconds:
+          type:
+          - number
+          - 'null'
+          description: Duration in seconds for video and audio files. Null for images.
+        transcript:
+          description: Timed transcript for video and audio files, when available, as a `Transcript` object with timed `words`. Null for images or when no transcript has been generated. For plain transcript text, use `transcriptText`.
+          anyOf:
+          - $ref: '#/components/schemas/Transcript'
+          - type: 'null'
+        transcriptText:
+          type:
+          - string
+          - 'null'
+          description: Plain transcript text for video and audio files, when available. Null for images or when no transcript has been generated.
+        downloadUrl:
+          type:
+          - string
+          - 'null'
+          format: uri
+          description: Private signed URL for the highest-quality downloadable rendition, provided at the top level for convenience. Valid for 7 days from when it was signed. `null` when the rendition is still processing or the URL has not been signed yet. See `downloadUrlExpiresAt` for the exact expiry and `downloadSource` for the full rendition metadata; call `POST /v1/files/{fileId}/hydrate` to refresh it.
+        downloadUrlExpiresAt:
+          type:
+          - integer
+          - 'null'
+          description: Seconds since epoch (Unix timestamp) when `downloadUrl` expires. `null` when `downloadUrl` is null.
+        thumbnailUrl:
+          type:
+          - string
+          - 'null'
+          format: uri
+          description: Private signed URL for the thumbnail rendition, provided at the top level for convenience. Valid for 7 days from when it was signed. `null` for file types that have no thumbnail (e.g. audio) or when it has not been signed yet. See `thumbnailSource` for the full rendition metadata.
+        thumbnailUrlExpiresAt:
+          type:
+          - integer
+          - 'null'
+          description: Seconds since epoch (Unix timestamp) when `thumbnailUrl` expires. `null` when `thumbnailUrl` is null.
+        thumbnailSource:
+          description: Thumbnail image source. Populated after hydration.
+          anyOf:
+          - $ref: '#/components/schemas/FileSource'
+          - type: 'null'
+        previewSource:
+          description: Preview rendition source (720p for video, resized for images). Populated after hydration.
+          anyOf:
+          - $ref: '#/components/schemas/FileSource'
+          - type: 'null'
+        downloadSource:
+          description: Highest-quality downloadable rendition. Populated after hydration.
+          anyOf:
+          - $ref: '#/components/schemas/FileSource'
+          - type: 'null'
+        hlsSource:
+          description: Private HLS streaming source. Populated for video and audio files once streaming renditions are ready. Uses a signed token; treat like other signed sources.
+          anyOf:
+          - $ref: '#/components/schemas/FileSource'
+          - type: 'null'
+        isPublicPreviewEnabled:
+          type: boolean
+          description: Whether public preview is enabled for this file. When true, `staticPublicPreviewSource` is populated for all file types. For video and audio, `publicHlsUrl` and `publicPlaybackId` are also populated once embed streaming is ready.
+        staticPublicPreviewSource:
+          description: Permanent public URL for the file's highest-quality rendition. Populated when `isPublicPreviewEnabled` is true. Does not expire (`expiresAt` is null). Use for direct links to images, downloads, or any file type. For embedded video or audio players, prefer `publicPlaybackId`.
+          anyOf:
+          - $ref: '#/components/schemas/FileSource'
+          - type: 'null'
+        publicHlsUrl:
+          type:
+          - string
+          - 'null'
+          description: Public HLS streaming URL for video and audio. Only present when `isPublicPreviewEnabled` is true and embed streaming is ready. Prefer `publicPlaybackId` with `@videogen/player` for embeds.
+        publicPlaybackId:
+          type:
+          - string
+          - 'null'
+          description: Encoded public playback id (e.g. `vg_play_...`) for video and audio embeds. Pass this to `@videogen/player` or `@videogen/player-react`. Only present when `isPublicPreviewEnabled` is true and embed streaming is ready. For a permanent direct file URL (any type), use `staticPublicPreviewSource` instead.
+        sourceToolType:
+          type: string
+          description: Tool type that generated this file (e.g. `GENERATE_IMAGE`, `TEXT_TO_SPEECH`). Only present when the file was created by a tool execution.
+        sourceToolExecutionId:
+          type: string
+          description: Execution id of the tool call that generated this file (e.g. `vg_tool_...`). Only present when the file was created by a tool execution.
+        fileAnalysisMetadata:
+          description: Background analysis state for the file (used to populate `description`, `transcript`, `durationSeconds`, and the search embedding). Omitted when the file was returned via a path that does not check analysis progress (e.g. tool-result inline files and webhook payloads).
+          $ref: '#/components/schemas/FileAnalysisMetadata'
+    Transcript:
+      type: object
+      required:
+      - words
+      description: A transcript of an audio file, as timed words in order.
+      properties:
+        languageCode:
+          type:
+          - string
+          - 'null'
+          description: Optional BCP-47 language code of the spoken audio (e.g. `en`, `es`). Used to tag the transcript's language; omit if unknown.
+        words:
+          type: array
+          items:
+            $ref: '#/components/schemas/TranscriptWord'
+          description: The transcript words, sorted by `startSeconds` and non-overlapping. Must contain at least one word.
+  parameters:
+    PaginationLimit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+      description: Maximum number of items to return in the page. Defaults to 50; capped at 200. See [Pagination](/pagination).
+    IncludeProjectFilesQuery:
+      name: includeProjectFiles
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+      description: 'When true, includes project files: the generative files created within a project (e.g. each AI image and text-to-speech file produced inside a script-to-video workflow output). When false (default), they are omitted.'
+    FileIdPath:
+      name: fileId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The file id (e.g. `vg_file_...`).
+    SelfOnlyQuery:
+      name: selfOnly
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+      description: When true, returns only items created by the API key's owner. When false (default), returns all items accessible to the team.
+    PaginationCursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Opaque pagination cursor returned as `nextCursor` by the previous page. Omit on the first request. Cursors are tied to the endpoint that produced them and must be passed unmodified. See [Pagination](/pagination).
+    IncludeExportFilesQuery:
+      name: includeExportFiles
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+      description: 'When true, includes export files: the raw output files of your exports (the rendered MP4 you download from an export). When false (default), they are omitted.'
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: API key from [app.videogen.io/api](https://app.videogen.io/api). The full key is only shown once when you create it.

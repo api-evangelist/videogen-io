@@ -1,0 +1,29 @@
+{
+  "provider": "videogen-io",
+  "sources": [
+    "videogen-io-openapi.json"
+  ],
+  "outputs": [
+    "videogen-io-account-api-openapi.yml",
+    "videogen-io-assistant-api-openapi.yml",
+    "videogen-io-entities-api-openapi.yml",
+    "videogen-io-files-api-openapi.yml",
+    "videogen-io-projects-api-openapi.yml",
+    "videogen-io-resources-api-openapi.yml",
+    "videogen-io-text-api-openapi.yml",
+    "videogen-io-tools-api-openapi.yml",
+    "videogen-io-webhook-events-api-openapi.yml",
+    "videogen-io-webhooks-api-openapi.yml",
+    "videogen-io-workflows-api-openapi.yml"
+  ],
+  "archived": [
+    "archived openapi/videogen-io-openapi.json"
+  ],
+  "errors": [],
+  "warnings": [],
+  "notes": [
+    "videogen-io-openapi.json: upgraded openapi 3.1.0 -> OpenAPI 3.2.0",
+    "apis.yml register: written (+11 apis, 11 total)"
+  ],
+  "skipped": []
+}

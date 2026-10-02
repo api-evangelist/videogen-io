@@ -1,0 +1,66 @@
+generated: '2026-10-02'
+method: probed
+source: pre-flight dossier (docs platform, portal detections) + CNAME chains and response headers of the hosts apis.yml names
+registry: all/0-working/vendors.yml
+areas_vocabulary:
+- documentation
+- developer-portal
+- api-gateway
+- cdn
+- hosting
+- sdk-generation
+- api-collections
+- status-page
+- support
+- community
+- identity
+- mcp-hosting
+vendors:
+- vendor: cloudflare
+  name: Cloudflare
+  area: cdn
+  host: videogen.io
+  evidence: header:cf-ray
+  signal: header
+  confidence: high
+  kin_score:
+  - https_enforced
+  - hsts
+- vendor: fern
+  name: Fern
+  area: documentation
+  host: docs.videogen.io
+  evidence: markup:buildwithfern
+  signal: docs-platform
+  confidence: medium
+  kin_score:
+  - openapi_published
+  - sdk_count_1
+  - sdk_count_3
+- vendor: vercel
+  name: Vercel
+  area: hosting
+  host: docs.videogen.io
+  evidence: header:x-vercel-id
+  signal: header
+  confidence: high
+  kin_score: []
+reliance:
+  areas_vendor_served:
+  - cdn
+  - documentation
+  - hosting
+  vendor_count: 3
+  areas_observed: 12
+  share_of_observable_areas: 0.25
+  note: areas where a third party was DETECTED serving this provider; an area absent here was either self-run or not observed, and this script
+    cannot tell those apart
+checked:
+- 'docs-platform: fern'
+- app.videogen.io (SignUp)
+- api.videogen.io\n```\n\n (DeveloperPortal)
+- videogen.io (Website)
+- docs.videogen.io (Documentation)
+- help.videogen.io (Support)
+- docs.videogen.io (GettingStarted)
+- api.videogen.io (baseURL)

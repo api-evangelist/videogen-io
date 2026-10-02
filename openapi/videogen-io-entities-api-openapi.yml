@@ -1,0 +1,467 @@
+openapi: 3.2.0
+info:
+  title: VideoGen Entities API
+  version: 1.0.0
+  description: Programmatically generate images, videos, voiceovers, sound effects, and avatar clips.
+servers:
+- url: https://api.videogen.io
+  description: Production
+security:
+- bearerAuth: []
+tags:
+- name: Entities
+  description: Reusable actors and visual styles. Attach their reference images to workflows for consistent characters and looks across generations.
+paths:
+  /v1/entities:
+    get:
+      tags:
+      - Entities
+      operationId: listEntities
+      x-fern-audiences:
+      - rest
+      summary: List entities
+      description: 'List built-in actors, products, visual styles, and slideshow themes, followed by the entities available to your team. Built-in entities have `isBuiltIn: true` and cannot be updated or archived. Cursor-paginated; see the Pagination guide.'
+      parameters:
+      - $ref: '#/components/parameters/EntityTypeQuery'
+      - $ref: '#/components/parameters/PaginationLimit'
+      - $ref: '#/components/parameters/PaginationCursor'
+      responses:
+        '200':
+          description: Entity list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListEntitiesResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    post:
+      tags:
+      - Entities
+      operationId: createEntity
+      x-fern-audiences:
+      - rest
+      summary: Create entity
+      description: Create a new actor or visual style. Attach reference images with `POST /v1/entities/{entityId}/references`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEntityRequest'
+      responses:
+        '200':
+          description: The created entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entity'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/entities/{entityId}:
+    get:
+      tags:
+      - Entities
+      operationId: getEntity
+      x-fern-audiences:
+      - rest
+      summary: Get entity
+      description: Retrieve a single entity by its id, including its reference images. Built-in catalog entities are included.
+      parameters:
+      - $ref: '#/components/parameters/EntityIdPath'
+      responses:
+        '200':
+          description: Entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entity'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/entities/{entityId}/update:
+    post:
+      tags:
+      - Entities
+      operationId: updateEntity
+      x-fern-audiences:
+      - rest
+      summary: Update entity
+      description: 'Update an entity''s name or description. Provide at least one field. Built-in entities (`isBuiltIn: true`) cannot be updated.'
+      parameters:
+      - $ref: '#/components/parameters/EntityIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEntityRequest'
+      responses:
+        '200':
+          description: The updated entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entity'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/entities/{entityId}/archive:
+    post:
+      tags:
+      - Entities
+      operationId: archiveEntity
+      x-fern-audiences:
+      - rest
+      summary: Archive entity
+      description: 'Archive an entity. Archived entities no longer appear in `GET /v1/entities` and can''t be attached to new workflows. Built-in entities (`isBuiltIn: true`) cannot be archived.'
+      parameters:
+      - $ref: '#/components/parameters/EntityIdPath'
+      responses:
+        '200':
+          description: Archive acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityArchiveResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/entities/{entityId}/references:
+    post:
+      tags:
+      - Entities
+      operationId: addEntityReference
+      x-fern-audiences:
+      - rest
+      summary: Add entity reference
+      description: 'Attach an image file as a reference for the entity. Upload the image first via `POST /v1/files/upload`. Returns the updated entity. Built-in entities (`isBuiltIn: true`) cannot have references added.'
+      parameters:
+      - $ref: '#/components/parameters/EntityIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddEntityReferenceRequest'
+      responses:
+        '200':
+          description: The updated entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entity'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/entities/{entityId}/references/remove:
+    post:
+      tags:
+      - Entities
+      operationId: removeEntityReference
+      x-fern-audiences:
+      - rest
+      summary: Remove entity reference
+      description: 'Detach a reference image from the entity. Returns the updated entity. Built-in entities (`isBuiltIn: true`) cannot have references removed.'
+      parameters:
+      - $ref: '#/components/parameters/EntityIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemoveEntityReferenceRequest'
+      responses:
+        '200':
+          description: The updated entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entity'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  parameters:
+    EntityIdPath:
+      name: entityId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The entity id (e.g. `vg_enti_...`).
+    PaginationCursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Opaque pagination cursor returned as `nextCursor` by the previous page. Omit on the first request. Cursors are tied to the endpoint that produced them and must be passed unmodified. See [Pagination](/pagination).
+    PaginationLimit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+      description: Maximum number of items to return in the page. Defaults to 50; capped at 200. See [Pagination](/pagination).
+    EntityTypeQuery:
+      name: entityType
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+        - ACTOR
+        - PRODUCT
+        - VISUAL_STYLE
+        - SLIDESHOW_THEME
+      description: When provided, returns only entities of this type. Omit to return all entities.
+  schemas:
+    ListEntitiesResponse:
+      type: object
+      required:
+      - entities
+      - hasMore
+      - nextCursor
+      properties:
+        entities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Entity'
+        hasMore:
+          type: boolean
+          description: When true, there are more entities available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
+        nextCursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
+    ErrorRequirement:
+      type: object
+      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
+    RemoveEntityReferenceRequest:
+      type: object
+      required:
+      - fileId
+      properties:
+        fileId:
+          type: string
+          description: The file id (e.g. `vg_file_...`) of the reference to remove.
+    EntityReference:
+      type: object
+      description: A file attached to an entity as a reference image.
+      required:
+      - fileId
+      - description
+      - isDefault
+      properties:
+        fileId:
+          type: string
+          description: The reference image file id (e.g. `vg_file_...`). Hydrate it via `GET /v1/files/{fileId}` to fetch a viewable URL.
+        description:
+          type: string
+          description: Optional description of the reference. Empty string when not set.
+        isDefault:
+          type: boolean
+          description: When true, this is the entity's primary reference (used for its thumbnail).
+    ApiError:
+      type: object
+      description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
+
+
+        - `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.
+
+
+        Common `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.
+
+        '
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          description: Human-readable error description. For display and logging only; do not branch on its exact text.
+        code:
+          type:
+          - string
+          - 'null'
+          description: Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies.
+        requirement:
+          description: What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.
+          anyOf:
+          - $ref: '#/components/schemas/ErrorRequirement'
+          - type: 'null'
+        internalErrorCode:
+          type:
+          - string
+          - 'null'
+          description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
+    UpdateEntityRequest:
+      type: object
+      description: At least one field must be provided.
+      properties:
+        name:
+          type:
+          - string
+          - 'null'
+          description: New display name. Omit to leave unchanged.
+        description:
+          type:
+          - string
+          - 'null'
+          description: New description. Omit to leave unchanged.
+    EntityActorConfig:
+      type: object
+      description: Read-only voice and avatar summary for an ACTOR entity. Always null for non-ACTOR entities.
+      required:
+      - hasVoice
+      - hasAvatarPresenter
+      properties:
+        voiceDisplayName:
+          type:
+          - string
+          - 'null'
+          description: Display name of the actor's voice when one is configured. Null otherwise.
+        hasVoice:
+          type: boolean
+          description: True when the actor has a configured voice.
+        hasAvatarPresenter:
+          type: boolean
+          description: True when the actor has a built-in presenter or image reference that can be used with `actorEntityId` for avatar generation.
+    AddEntityReferenceRequest:
+      type: object
+      required:
+      - fileId
+      properties:
+        fileId:
+          type: string
+          description: The file id (e.g. `vg_file_...`) of an image to attach as a reference.
+        description:
+          type: string
+          description: Optional description of the reference.
+        isDefault:
+          type: boolean
+          default: false
+          description: When true, make this the entity's primary reference (used for its thumbnail).
+    EntityArchiveResponse:
+      type: object
+      required:
+      - entityId
+      - archived
+      properties:
+        entityId:
+          type: string
+          description: The id of the archived entity.
+        archived:
+          type: boolean
+          description: Always true on success.
+    CreateEntityRequest:
+      type: object
+      required:
+      - entityType
+      - name
+      properties:
+        entityType:
+          type: string
+          enum:
+          - ACTOR
+          - PRODUCT
+          - VISUAL_STYLE
+          - SLIDESHOW_THEME
+          description: ACTOR features a consistent character; PRODUCT features a consistent product or object; VISUAL_STYLE guides the look of generated images; SLIDESHOW_THEME is a shared slide design system (fonts, colors, layout) applied to every slide of a slideshow-to-video deck.
+        name:
+          type: string
+          description: Display name.
+        description:
+          type: string
+          description: Optional description.
+    Entity:
+      type: object
+      description: A reusable actor, product, visual style, or slideshow theme. Attach its reference images to workflows for consistent characters, looks, and slide designs.
+      required:
+      - entityId
+      - entityType
+      - name
+      - description
+      - references
+      - createdAt
+      - updatedAt
+      properties:
+        entityId:
+          type: string
+          description: The entity id (e.g. `vg_enti_...`).
+        entityType:
+          type: string
+          enum:
+          - ACTOR
+          - PRODUCT
+          - VISUAL_STYLE
+          - SLIDESHOW_THEME
+          description: ACTOR features a consistent character; PRODUCT features a consistent product or object; VISUAL_STYLE guides the look of generated images; SLIDESHOW_THEME is a shared slide design system (fonts, colors, layout) applied to every slide of a slideshow-to-video deck.
+        name:
+          type: string
+          description: Display name.
+        description:
+          type: string
+          description: Optional description. Empty string when not set.
+        actorConfig:
+          anyOf:
+          - $ref: '#/components/schemas/EntityActorConfig'
+          - type: 'null'
+          description: Voice and presenter summary for ACTOR entities. Null for non-ACTOR entities.
+        references:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntityReference'
+          description: Reference images attached to the entity.
+        createdAt:
+          type: integer
+          description: Seconds since epoch (Unix timestamp) when the entity was created.
+        updatedAt:
+          type: integer
+          description: Seconds since epoch (Unix timestamp) when the entity was last updated.
+        isBuiltIn:
+          type: boolean
+          description: When true, this is a VideoGen catalog entity. Built-in entities cannot be updated, archived, or have references added or removed.
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: API key from [app.videogen.io/api](https://app.videogen.io/api). The full key is only shown once when you create it.

@@ -1,29 +1,360 @@
 aid: videogen-io
 name: VideoGen
-description: 'VideoGen is a company surfaced via the API Evangelist harvest backlog (source: new-submission)
-  and added to the network as a stub for full-pipeline profiling.'
+image: https://storage.googleapis.com/videogen-assets/website/cover.jpg
+description: VideoGen provides an AI-powered platform that automates video creation from scripts, voiceovers, and storyboards. Users can generate
+  explainer videos, ads, tutorials, and social media clips at scale via a single API call. The service includes tools for text‑to‑video, image‑to‑video,
+  AI avatars, and customizable workflows, targeting creators, marketers, and enterprises seeking fast, cost‑effective video production.
 url: https://raw.githubusercontent.com/api-evangelist/videogen-io/refs/heads/main/apis.yml
 x-type: company
 x-source: harvest:new-submission
-x-tier: stub
-x-tier-reason: harvest
+x-tier: profiled
+x-tier-reason: enrichment pass 2026-10-02 (modular-v1; was harvest)
 specificationVersion: '0.20'
 created: '2026-10-02'
 modified: '2026-10-02'
 tags:
 - Company
-apis: []
+- AI
+- Video
+- Automation
+- Platform
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
 - FN: APIs.json
   email: info@apis.io
 common:
+- type: SignUp
+  url: https://app.videogen.io/signup?internalReferrerPath=%2F
+- type: AgenticAccess
+  url: agentic-access/videogen-io-agentic-access.yml
+- type: RateLimits
+  url: rate-limits/videogen-io-rate-limits.yml
+- type: Plans
+  url: plans/videogen-io-plans-pricing.yml
+- type: Spectral
+  url: rules/videogen-io-rules.yml
+- type: JSONLD
+  url: json-ld/videogen-io-context.jsonld
+- type: Vocabulary
+  url: vocabulary/videogen-io-vocabulary.yml
+- type: AgentSkill
+  url: skills/_index.yml
+- type: Webhooks
+  url: asyncapi/videogen-io-webhooks.yml
+- type: DataModel
+  url: data-model/videogen-io-data-model.yml
+- type: CLI
+  url: cli/videogen-io-cli.yml
+- type: ChangeLog
+  url: changelog/videogen-io-changelog.yml
+- type: Conventions
+  url: conventions/videogen-io-conventions.yml
+- type: Authentication
+  url: authentication/videogen-io-authentication.yml
+- type: ErrorCatalog
+  url: errors/videogen-io-problem-types.yml
+- type: Conformance
+  url: conformance/videogen-io-conformance.yml
+- type: LLMsTxt
+  url: llms/videogen-io-llms.txt
+- type: SecurityTxt
+  url: well-known/videogen-io-help-security.txt
+- type: WellKnown
+  url: well-known/videogen-io-well-known.yml
+- type: Hosts
+  url: hosts/videogen-io-hosts.yml
+- type: Vendors
+  url: vendors/videogen-io-vendors.yml
+- type: SDKs
+  url: packages/videogen-io-packages.yml
+- type: Packages
+  url: packages/videogen-io-packages.yml
+- type: TermsOfService
+  url: https://videogen.io/terms-of-service
+- type: PrivacyPolicy
+  url: https://videogen.io/privacy-policy
+- type: Newsroom
+  url: https://videogen.io/news
+- type: ChangeLog
+  url: https://videogen.io/changelog
+- type: DeveloperPortal
+  url: https://api.videogen.io\n```\n\n
+- type: DomainSecurity
+  url: security/videogen-io-domain-security.yml
 - type: Website
   url: https://videogen.io
 - type: Documentation
   url: https://docs.videogen.io/introduction
+- type: Pricing
+  url: https://videogen.io/pricing
+- type: Blog
+  url: https://videogen.io/blog
+- type: Support
+  url: https://help.videogen.io/en/
+- type: GettingStarted
+  url: https://docs.videogen.io/getting-started
+apis:
+- aid: videogen-io:videogen-io-account-api
+  name: VideoGen Account API
+  description: >-
+    Look up the account and team behind the API key. Useful as a connection test to confirm a key is valid.
+  humanURL: https://docs.videogen.io
+  baseURL: https://api.videogen.io
+  tags:
+  - Account
+  properties:
+  - type: OpenAPI
+    url: openapi/videogen-io-account-api-openapi.yml
+  - type: JSONSchema
+    url: json-schema/videogen-io-file-info-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-slideshow-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-generate-video-clip-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-script-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-voiceover-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-workflow-run-schema.json
+- aid: videogen-io:videogen-io-assistant-api
+  name: VideoGen Assistant API
+  description: >-
+    Converse with the VideoGen AI assistant inside a project. Start a chat, send messages, and act on
+    the assistant's suggestions (pick a workflow, approve a plan, generate). All calls are asynchronous:
+    POSTing a message returns a `messageId` (e.g. `vg_mesg_...`); poll `GET /v1/assistant-messages/{messageId}`
+    until `status` is `succeeded`, `failed`, or `cancelled`, or subscribe to `assistant_message.*` webhooks.
+  humanURL: https://docs.videogen.io
+  baseURL: https://api.videogen.io
+  tags:
+  - Assistant
+  properties:
+  - type: OpenAPI
+    url: openapi/videogen-io-assistant-api-openapi.yml
+  - type: JSONSchema
+    url: json-schema/videogen-io-file-info-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-slideshow-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-generate-video-clip-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-script-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-voiceover-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-workflow-run-schema.json
+- aid: videogen-io:videogen-io-entities-api
+  name: VideoGen Entities API
+  description: >-
+    Reusable actors and visual styles. Attach their reference images to workflows for consistent characters
+    and looks across generations.
+  humanURL: https://docs.videogen.io
+  baseURL: https://api.videogen.io
+  tags:
+  - Entities
+  properties:
+  - type: OpenAPI
+    url: openapi/videogen-io-entities-api-openapi.yml
+  - type: JSONSchema
+    url: json-schema/videogen-io-file-info-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-slideshow-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-generate-video-clip-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-script-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-voiceover-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-workflow-run-schema.json
+- aid: videogen-io:videogen-io-files-api
+  name: VideoGen Files API
+  description: List and retrieve metadata for generated files.
+  humanURL: https://docs.videogen.io
+  baseURL: https://api.videogen.io
+  tags:
+  - Files
+  properties:
+  - type: OpenAPI
+    url: openapi/videogen-io-files-api-openapi.yml
+  - type: JSONSchema
+    url: json-schema/videogen-io-file-info-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-slideshow-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-generate-video-clip-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-script-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-voiceover-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-workflow-run-schema.json
+- aid: videogen-io:videogen-io-projects-api
+  name: VideoGen Projects API
+  description: Read project metadata and status.
+  humanURL: https://docs.videogen.io
+  baseURL: https://api.videogen.io
+  tags:
+  - Projects
+  properties:
+  - type: OpenAPI
+    url: openapi/videogen-io-projects-api-openapi.yml
+  - type: JSONSchema
+    url: json-schema/videogen-io-file-info-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-slideshow-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-generate-video-clip-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-script-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-voiceover-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-workflow-run-schema.json
+- aid: videogen-io:videogen-io-resources-api
+  name: VideoGen Resources API
+  description: Discover available TTS voices and supported languages to use in requests.
+  humanURL: https://docs.videogen.io
+  baseURL: https://api.videogen.io
+  tags:
+  - Resources
+  properties:
+  - type: OpenAPI
+    url: openapi/videogen-io-resources-api-openapi.yml
+  - type: JSONSchema
+    url: json-schema/videogen-io-file-info-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-slideshow-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-generate-video-clip-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-script-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-voiceover-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-workflow-run-schema.json
+- aid: videogen-io:videogen-io-text-api
+  name: VideoGen Text API
+  description: >-
+    Generate text with a general-purpose language model. Synchronous — the response includes the generated
+    text.
+  humanURL: https://docs.videogen.io
+  baseURL: https://api.videogen.io
+  tags:
+  - Text
+  properties:
+  - type: OpenAPI
+    url: openapi/videogen-io-text-api-openapi.yml
+  - type: JSONSchema
+    url: json-schema/videogen-io-file-info-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-slideshow-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-generate-video-clip-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-script-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-voiceover-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-workflow-run-schema.json
+- aid: videogen-io:videogen-io-tools-api
+  name: VideoGen Tools API
+  description: Generate images, videos, audio, and more. All tool endpoints are asynchronous.
+  humanURL: https://docs.videogen.io
+  baseURL: https://api.videogen.io
+  tags:
+  - Tools
+  properties:
+  - type: OpenAPI
+    url: openapi/videogen-io-tools-api-openapi.yml
+  - type: JSONSchema
+    url: json-schema/videogen-io-file-info-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-slideshow-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-generate-video-clip-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-script-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-voiceover-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-workflow-run-schema.json
+- aid: videogen-io:videogen-io-webhook-events-api
+  name: VideoGen Webhook events API
+  description: Event payloads delivered to your registered webhook endpoints.
+  humanURL: https://docs.videogen.io
+  baseURL: https://api.videogen.io
+  tags:
+  - Webhook events
+  properties:
+  - type: OpenAPI
+    url: openapi/videogen-io-webhook-events-api-openapi.yml
+  - type: JSONSchema
+    url: json-schema/videogen-io-file-info-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-slideshow-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-generate-video-clip-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-script-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-voiceover-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-workflow-run-schema.json
+- aid: videogen-io:videogen-io-webhooks-api
+  name: VideoGen Webhooks API
+  description: >-
+    Register endpoints to receive `tool_execution.*` and `workflow_run.*` events instead of polling.
+  humanURL: https://docs.videogen.io
+  baseURL: https://api.videogen.io
+  tags:
+  - Webhooks
+  properties:
+  - type: OpenAPI
+    url: openapi/videogen-io-webhooks-api-openapi.yml
+  - type: JSONSchema
+    url: json-schema/videogen-io-file-info-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-slideshow-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-generate-video-clip-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-script-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-voiceover-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-workflow-run-schema.json
+- aid: videogen-io:videogen-io-workflows-api
+  name: VideoGen Workflows API
+  description: >-
+    End-to-end async video workflows. Each endpoint starts a workflow run that creates a project and generates
+    a video.
+  humanURL: https://docs.videogen.io
+  baseURL: https://api.videogen.io
+  tags:
+  - Workflows
+  properties:
+  - type: OpenAPI
+    url: openapi/videogen-io-workflows-api-openapi.yml
+  - type: JSONSchema
+    url: json-schema/videogen-io-file-info-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-slideshow-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-generate-video-clip-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-script-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-voiceover-to-video-request-schema.json
+  - type: JSONSchema
+    url: json-schema/videogen-io-workflow-run-schema.json
 x-submission-notes: Developer API for creating and exporting videos from scripts, voiceovers and storyboards.
-x-submission-probe: root 200; docs 200; OpenAPI 3.1.0 57 paths server api.videogen.io; MCP mcp.videogen.io/mcp
-  401 (API key); 404 probe 404
+x-submission-probe: root 200; docs 200; OpenAPI 3.1.0 57 paths server api.videogen.io; MCP mcp.videogen.io/mcp 401 (API key); 404 probe 404
 x-submitted-by: info@videogen.io (apis.io/add, 2026-10-01)
+x-enrichment:
+  date: '2026-10-02'
+  status: enriched
+  artifacts_added: 39
+  pass: modular-v1
+  engine: identity=local,contract=local,surfaces=local,docs=local,regulatory=local

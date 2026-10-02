@@ -1,0 +1,23 @@
+generated: '2026-10-02'
+method: searched
+generator: extract-docs-artifacts.py (local)
+source: https://videogen.io/pricing
+sources:
+- https://videogen.io/pricing
+- https://dev.videogen.io/pricing
+- https://help.videogen.io/en/articles/11467785-teams-subscriptions-and-billing
+- https://help.videogen.io/en/articles/14192348-account-and-billing-overview
+name: VideoGen pricing
+audience: business-product
+pricing_basis: per-seat
+plans:
+- name: Pro
+  price_text: $19 /month
+  price: 19
+- name: Advanced
+  price_text: $39 /month
+  price: 39
+- name: Ultra
+  price_text: $99 /month
+  price: 99
+docs: https://videogen.io/pricing

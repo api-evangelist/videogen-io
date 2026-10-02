@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/videogen-io/main/json-schema/videogen-io-generate-video-clip-request-schema.json",
+  "title": "GenerateVideoClipRequest",
+  "description": "At least one of `prompt`, `startFrameFileId`, `imageFileIds`, `videoFileIds`, `audioFileIds`, or `spokenDialogue` must be provided.",
+  "x-generated": "2026-10-02",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/videogen-io-openapi.json#/components/schemas/GenerateVideoClipRequest",
+  "type": "object",
+  "properties": {
+    "prompt": {
+      "type": "string",
+      "description": "Text prompt describing the video to generate. Optional when reference media, `startFrameFileId`, or `spokenDialogue` is provided. Describe the video in plain language; any reference media you provide is incorporated automatically."
+    },
+    "startFrameFileId": {
+      "type": "string",
+      "description": "Optional file id of the opening-frame still (e.g. `vg_file_...`). Upload first via `POST /v1/files/upload`. When set, this image is the first frame of the clip. If the same id also appears in `imageFileIds`, it is used only as the opening frame and dropped from the reference list. Can be the only input (prompt optional)."
+    },
+    "imageFileIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 4,
+      "description": "Optional file ids of reference images (e.g. `[\"vg_file_...\"]`). Upload files first via `POST /v1/files/upload`, then pass the returned ids here. When provided, the images are used as visual guidance. To animate a specific still as the opening frame, pass it as `startFrameFileId` instead."
+    },
+    "videoFileIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 4,
+      "description": "Optional file ids of reference videos (e.g. `[\"vg_file_...\"]`). Upload files first via `POST /v1/files/upload`, then pass the returned ids here. They are used as motion or style guidance for the generated video."
+    },
+    "audioFileIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 4,
+      "description": "Optional file ids of reference audio clips (e.g. `[\"vg_file_...\"]`) used for lip-sync from that recording. Upload files first via `POST /v1/files/upload`, then pass the returned ids here. To have the model speak a line it generates itself, pass `spokenDialogue` instead (or in addition)."
+    },
+    "spokenDialogue": {
+      "type": "string",
+      "description": "Optional exact line the subject should speak as native, lip-synced speech in the generated clip. The model synthesizes the voice from this text. Can be the only input. Combine with a visual `prompt`, `startFrameFileId`, or reference media. Combine with `audioFileIds` when you also have a reference recording."
+    },
+    "voiceDescription": {
+      "type": "string",
+      "description": "Optional natural-language description of the voice that speaks `spokenDialogue` (for example, a warm, confident young man's voice). Used when `spokenDialogue` is set. When omitted, a clear natural voice is used."
+    },
+    "generateAudio": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, the generated video is guaranteed to include audio. When false, audio may still be present. Defaults to false."
+    },
+    "suppressBackgroundMusic": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, the generated clip will not include a musical soundtrack. Spoken dialogue and environmental sound are still allowed. Use this when you will add background music separately (for example at the project level). Defaults to false."
+    },
+    "durationSeconds": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "maximum": 30,
+      "description": "Optional clip length in whole seconds (1 to 30). Omit or pass null for Auto (duration is estimated at generate time so spoken text or the visual beat fits, clamped to the selected quality's supported range). When set, that length is used as-is. This endpoint produces a single short clip. For longer, multi-scene, professionally edited videos, use a video workflow such as `POST /v1/workflows/script-to-video`."
+    },
+    "aspectRatio": {
+      "$ref": "#/$defs/AspectRatio",
+      "description": "Aspect ratio for the generated video. Defaults to 16:9 when omitted."
+    },
+    "quality": {
+      "$ref": "#/$defs/ModelQuality",
+      "description": "Video generation quality tier (`LOW`, `STANDARD`, `HIGH`, or `MAX`). Optional; when omitted, your account's Default AI quality for video is used (change it at https://app.videogen.io/settings/account)."
+    },
+    "contentPolicyConfig": {
+      "$ref": "#/$defs/ContentPolicyConfig"
+    },
+    "watermarkMode": {
+      "$ref": "#/$defs/WatermarkMode"
+    },
+    "numResults": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 1,
+      "description": "Number of output results to generate. Defaults to 1."
+    },
+    "isOutputTemporary": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, generated files are temporary. Temporary files are guaranteed to be available for 24 hours, after which they may be archived at any time. Temporary files are not analyzed (no description, transcript, or embedding will be generated), so they will not appear in search results. Defaults to false."
+    },
+    "hideFromUi": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, generated files are hidden from the VideoGen Media page by default. They remain accessible through the API. Defaults to false."
+    }
+  },
+  "$defs": {
+    "AspectRatio": {
+      "type": "object",
+      "required": [
+        "width",
+        "height"
+      ],
+      "description": "Aspect ratio as a width:height pair (e.g. 16 and 9 for 16:9). Not pixel dimensions.",
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "ContentPolicyConfig": {
+      "type": "object",
+      "description": "Controls how content-policy rejections are handled during generation.",
+      "properties": {
+        "maxPromptRewrites": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4,
+          "default": 0,
+          "description": "Maximum number of automatic prompt rewrites to attempt after a content-policy rejection before failing. Must be an integer between 0 and 4. 0 (the default) fails on the first rejection and returns the moderation error so you can revise the prompt yourself. Higher values let the request automatically rephrase and retry the prompt."
+        }
+      }
+    },
+    "ModelQuality": {
+      "type": "string",
+      "enum": [
+        "LOW",
+        "STANDARD",
+        "HIGH",
+        "MAX"
+      ],
+      "description": "AI generation quality tier, shared across every generative feature (image, video, text, and so on). `LOW` is fastest and cheapest, `STANDARD` balances quality and cost, `HIGH` is higher quality, and `MAX` is the highest quality.\n\nWhen a request omits the quality field, VideoGen falls back to your account's **Default AI quality** for that feature, which you can change at [Account settings](https://app.videogen.io/settings/account). Not every feature supports every tier; unsupported tiers are rejected with an error (see each field's description).\n"
+    },
+    "WatermarkMode": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "VIDEO_GEN",
+        "AUTO"
+      ],
+      "default": "AUTO",
+      "description": "Controls whether the VideoGen watermark is applied to the output. `AUTO` applies the watermark unless you have a Pro plan. `VIDEO_GEN` always applies it. `NONE` removes the watermark (requires Pro; returns an error if you don't have it)."
+    }
+  }
+}

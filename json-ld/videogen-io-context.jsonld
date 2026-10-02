@@ -1,0 +1,996 @@
+{
+  "@context": {
+    "@vocab": "https://videogen.io/schema#",
+    "schema": "https://schema.org/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "dcterms": "http://purl.org/dc/terms/",
+    "videogen": "https://videogen.io/schema#",
+    "FileType": "videogen:FileType",
+    "FileInfo": "videogen:FileInfo",
+    "fileId": {
+      "@id": "videogen:fileId",
+      "@type": "xsd:string"
+    },
+    "type": {
+      "@id": "videogen:type"
+    },
+    "scope": {
+      "@id": "videogen:scope",
+      "@type": "xsd:string"
+    },
+    "displayName": {
+      "@id": "videogen:displayName",
+      "@type": "xsd:string"
+    },
+    "description": {
+      "@id": "videogen:description",
+      "@type": "xsd:string"
+    },
+    "durationSeconds": {
+      "@id": "videogen:durationSeconds",
+      "@type": "xsd:decimal"
+    },
+    "transcript": {
+      "@id": "videogen:transcript"
+    },
+    "transcriptText": {
+      "@id": "videogen:transcriptText",
+      "@type": "xsd:string"
+    },
+    "downloadUrl": {
+      "@id": "videogen:downloadUrl",
+      "@type": "@id"
+    },
+    "downloadUrlExpiresAt": {
+      "@id": "videogen:downloadUrlExpiresAt",
+      "@type": "xsd:integer"
+    },
+    "thumbnailUrl": {
+      "@id": "videogen:thumbnailUrl",
+      "@type": "@id"
+    },
+    "thumbnailUrlExpiresAt": {
+      "@id": "videogen:thumbnailUrlExpiresAt",
+      "@type": "xsd:integer"
+    },
+    "thumbnailSource": {
+      "@id": "videogen:thumbnailSource"
+    },
+    "previewSource": {
+      "@id": "videogen:previewSource"
+    },
+    "downloadSource": {
+      "@id": "videogen:downloadSource"
+    },
+    "hlsSource": {
+      "@id": "videogen:hlsSource"
+    },
+    "isPublicPreviewEnabled": {
+      "@id": "videogen:isPublicPreviewEnabled",
+      "@type": "xsd:boolean"
+    },
+    "staticPublicPreviewSource": {
+      "@id": "videogen:staticPublicPreviewSource"
+    },
+    "publicHlsUrl": {
+      "@id": "videogen:publicHlsUrl",
+      "@type": "xsd:string"
+    },
+    "publicPlaybackId": {
+      "@id": "videogen:publicPlaybackId",
+      "@type": "xsd:string"
+    },
+    "sourceToolType": {
+      "@id": "videogen:sourceToolType",
+      "@type": "xsd:string"
+    },
+    "sourceToolExecutionId": {
+      "@id": "videogen:sourceToolExecutionId",
+      "@type": "xsd:string"
+    },
+    "fileAnalysisMetadata": {
+      "@id": "videogen:fileAnalysisMetadata",
+      "@type": "@id"
+    },
+    "FileSource": "videogen:FileSource",
+    "status": {
+      "@id": "videogen:status",
+      "@type": "xsd:string"
+    },
+    "url": {
+      "@id": "videogen:url",
+      "@type": "xsd:string"
+    },
+    "expiresAt": {
+      "@id": "videogen:expiresAt",
+      "@type": "xsd:integer"
+    },
+    "width": {
+      "@id": "videogen:width",
+      "@type": "xsd:integer"
+    },
+    "height": {
+      "@id": "videogen:height",
+      "@type": "xsd:integer"
+    },
+    "fileBytes": {
+      "@id": "videogen:fileBytes",
+      "@type": "xsd:integer"
+    },
+    "FileAnalysisMetadata": "videogen:FileAnalysisMetadata",
+    "analysisLoadingState": {
+      "@id": "videogen:analysisLoadingState",
+      "@type": "xsd:string"
+    },
+    "analysisProgressPercentage": {
+      "@id": "videogen:analysisProgressPercentage",
+      "@type": "xsd:decimal"
+    },
+    "analysisAttemptIndex": {
+      "@id": "videogen:analysisAttemptIndex",
+      "@type": "xsd:integer"
+    },
+    "SearchFilesRequest": "videogen:SearchFilesRequest",
+    "query": {
+      "@id": "videogen:query",
+      "@type": "xsd:string"
+    },
+    "numResults": {
+      "@id": "videogen:numResults",
+      "@type": "xsd:integer"
+    },
+    "selfOnly": {
+      "@id": "videogen:selfOnly",
+      "@type": "xsd:boolean"
+    },
+    "SearchFilesResponse": "videogen:SearchFilesResponse",
+    "results": {
+      "@id": "videogen:results",
+      "@container": "@list"
+    },
+    "SearchFilesResult": "videogen:SearchFilesResult",
+    "similarity": {
+      "@id": "videogen:similarity",
+      "@type": "xsd:decimal"
+    },
+    "file": {
+      "@id": "videogen:file",
+      "@type": "@id"
+    },
+    "CreateFileUploadRequest": "videogen:CreateFileUploadRequest",
+    "isTemporary": {
+      "@id": "videogen:isTemporary",
+      "@type": "xsd:boolean"
+    },
+    "hideFromUi": {
+      "@id": "videogen:hideFromUi",
+      "@type": "xsd:boolean"
+    },
+    "FileUploadResponse": "videogen:FileUploadResponse",
+    "uploadUrl": {
+      "@id": "videogen:uploadUrl",
+      "@type": "xsd:string"
+    },
+    "GetFilesResponse": "videogen:GetFilesResponse",
+    "files": {
+      "@id": "videogen:files",
+      "@container": "@list"
+    },
+    "hasMore": {
+      "@id": "videogen:hasMore",
+      "@type": "xsd:boolean"
+    },
+    "nextCursor": {
+      "@id": "videogen:nextCursor",
+      "@type": "xsd:string"
+    },
+    "EntityReference": "videogen:EntityReference",
+    "isDefault": {
+      "@id": "videogen:isDefault",
+      "@type": "xsd:boolean"
+    },
+    "EntityActorConfig": "videogen:EntityActorConfig",
+    "voiceDisplayName": {
+      "@id": "videogen:voiceDisplayName",
+      "@type": "xsd:string"
+    },
+    "hasVoice": {
+      "@id": "videogen:hasVoice",
+      "@type": "xsd:boolean"
+    },
+    "hasAvatarPresenter": {
+      "@id": "videogen:hasAvatarPresenter",
+      "@type": "xsd:boolean"
+    },
+    "Entity": "videogen:Entity",
+    "entityId": {
+      "@id": "videogen:entityId",
+      "@type": "xsd:string"
+    },
+    "entityType": {
+      "@id": "videogen:entityType",
+      "@type": "xsd:string"
+    },
+    "name": {
+      "@id": "videogen:name",
+      "@type": "xsd:string"
+    },
+    "actorConfig": {
+      "@id": "videogen:actorConfig"
+    },
+    "references": {
+      "@id": "videogen:references",
+      "@container": "@list"
+    },
+    "createdAt": {
+      "@id": "videogen:createdAt",
+      "@type": "xsd:integer"
+    },
+    "updatedAt": {
+      "@id": "videogen:updatedAt",
+      "@type": "xsd:integer"
+    },
+    "isBuiltIn": {
+      "@id": "videogen:isBuiltIn",
+      "@type": "xsd:boolean"
+    },
+    "ListEntitiesResponse": "videogen:ListEntitiesResponse",
+    "entities": {
+      "@id": "videogen:entities",
+      "@container": "@list"
+    },
+    "CreateEntityRequest": "videogen:CreateEntityRequest",
+    "UpdateEntityRequest": "videogen:UpdateEntityRequest",
+    "EntityArchiveResponse": "videogen:EntityArchiveResponse",
+    "archived": {
+      "@id": "videogen:archived",
+      "@type": "xsd:boolean"
+    },
+    "AddEntityReferenceRequest": "videogen:AddEntityReferenceRequest",
+    "RemoveEntityReferenceRequest": "videogen:RemoveEntityReferenceRequest",
+    "TtsVoice": "videogen:TtsVoice",
+    "voiceId": {
+      "@id": "videogen:voiceId",
+      "@type": "xsd:string"
+    },
+    "languageCode": {
+      "@id": "videogen:languageCode",
+      "@type": "xsd:string"
+    },
+    "displayGender": {
+      "@id": "videogen:displayGender",
+      "@type": "xsd:string"
+    },
+    "accent": {
+      "@id": "videogen:accent",
+      "@type": "xsd:string"
+    },
+    "supportsDirectToolExecution": {
+      "@id": "videogen:supportsDirectToolExecution",
+      "@type": "xsd:boolean"
+    },
+    "supportsAllLanguages": {
+      "@id": "videogen:supportsAllLanguages",
+      "@type": "xsd:boolean"
+    },
+    "isDeprecated": {
+      "@id": "videogen:isDeprecated",
+      "@type": "xsd:boolean"
+    },
+    "MeResponse": "videogen:MeResponse",
+    "apiKeyId": {
+      "@id": "videogen:apiKeyId",
+      "@type": "xsd:string"
+    },
+    "apiKeyNickname": {
+      "@id": "videogen:apiKeyNickname",
+      "@type": "xsd:string"
+    },
+    "email": {
+      "@id": "videogen:email",
+      "@type": "xsd:string"
+    },
+    "teamId": {
+      "@id": "videogen:teamId",
+      "@type": "xsd:string"
+    },
+    "TtsVoiceListResponse": "videogen:TtsVoiceListResponse",
+    "ttsVoices": {
+      "@id": "videogen:ttsVoices",
+      "@container": "@list"
+    },
+    "Language": "videogen:Language",
+    "LanguageListResponse": "videogen:LanguageListResponse",
+    "languages": {
+      "@id": "videogen:languages",
+      "@container": "@list"
+    },
+    "WatermarkMode": "videogen:WatermarkMode",
+    "EndScreenMode": "videogen:EndScreenMode",
+    "ContentPolicyConfig": "videogen:ContentPolicyConfig",
+    "maxPromptRewrites": {
+      "@id": "videogen:maxPromptRewrites",
+      "@type": "xsd:integer"
+    },
+    "AspectRatio": "videogen:AspectRatio",
+    "GenerateTextRequest": "videogen:GenerateTextRequest",
+    "prompt": {
+      "@id": "videogen:prompt",
+      "@type": "xsd:string"
+    },
+    "system": {
+      "@id": "videogen:system",
+      "@type": "xsd:string"
+    },
+    "quality": {
+      "@id": "videogen:quality",
+      "@type": "@id"
+    },
+    "temperature": {
+      "@id": "videogen:temperature",
+      "@type": "xsd:decimal"
+    },
+    "maxOutputTokens": {
+      "@id": "videogen:maxOutputTokens",
+      "@type": "xsd:integer"
+    },
+    "GenerateTextResponse": "videogen:GenerateTextResponse",
+    "text": {
+      "@id": "videogen:text",
+      "@type": "xsd:string"
+    },
+    "StartAssistantChatRequest": "videogen:StartAssistantChatRequest",
+    "message": {
+      "@id": "videogen:message",
+      "@type": "xsd:string"
+    },
+    "autoGenerate": {
+      "@id": "videogen:autoGenerate",
+      "@type": "xsd:boolean"
+    },
+    "SendAssistantMessageRequest": "videogen:SendAssistantMessageRequest",
+    "ActOnAssistantActionRequest": "videogen:ActOnAssistantActionRequest",
+    "decision": {
+      "@id": "videogen:decision",
+      "@type": "xsd:string"
+    },
+    "StartAssistantChatResponse": "videogen:StartAssistantChatResponse",
+    "messageId": {
+      "@id": "videogen:messageId",
+      "@type": "xsd:string"
+    },
+    "assistantId": {
+      "@id": "videogen:assistantId",
+      "@type": "xsd:string"
+    },
+    "projectId": {
+      "@id": "videogen:projectId",
+      "@type": "xsd:string"
+    },
+    "projectUrl": {
+      "@id": "videogen:projectUrl",
+      "@type": "@id"
+    },
+    "SendAssistantMessageResponse": "videogen:SendAssistantMessageResponse",
+    "ActOnAssistantActionResponse": "videogen:ActOnAssistantActionResponse",
+    "AssistantMessageStatus": "videogen:AssistantMessageStatus",
+    "AssistantActionKind": "videogen:AssistantActionKind",
+    "AssistantWorkflowSuggestion": "videogen:AssistantWorkflowSuggestion",
+    "actionId": {
+      "@id": "videogen:actionId",
+      "@type": "xsd:string"
+    },
+    "workflowType": {
+      "@id": "videogen:workflowType",
+      "@type": "@id"
+    },
+    "title": {
+      "@id": "videogen:title",
+      "@type": "xsd:string"
+    },
+    "AssistantActionDetail": "videogen:AssistantActionDetail",
+    "summary": {
+      "@id": "videogen:summary",
+      "@type": "xsd:string"
+    },
+    "creditsRemaining": {
+      "@id": "videogen:creditsRemaining",
+      "@type": "xsd:integer"
+    },
+    "estimatedCredits": {
+      "@id": "videogen:estimatedCredits",
+      "@type": "xsd:integer"
+    },
+    "AssistantAction": "videogen:AssistantAction",
+    "kind": {
+      "@id": "videogen:kind",
+      "@type": "@id"
+    },
+    "label": {
+      "@id": "videogen:label",
+      "@type": "xsd:string"
+    },
+    "requiresApp": {
+      "@id": "videogen:requiresApp",
+      "@type": "xsd:boolean"
+    },
+    "detail": {
+      "@id": "videogen:detail",
+      "@type": "@id"
+    },
+    "AssistantMessageAttachment": "videogen:AssistantMessageAttachment",
+    "AssistantInputMessage": "videogen:AssistantInputMessage",
+    "role": {
+      "@id": "videogen:role",
+      "@type": "xsd:string"
+    },
+    "content": {
+      "@id": "videogen:content",
+      "@type": "xsd:string"
+    },
+    "attachments": {
+      "@id": "videogen:attachments",
+      "@container": "@list"
+    },
+    "AssistantOutputMessage": "videogen:AssistantOutputMessage",
+    "workflowSuggestions": {
+      "@id": "videogen:workflowSuggestions",
+      "@container": "@list"
+    },
+    "actions": {
+      "@id": "videogen:actions",
+      "@container": "@list"
+    },
+    "generation": {
+      "@id": "videogen:generation"
+    },
+    "error": {
+      "@id": "videogen:error"
+    },
+    "GetAssistantResponse": "videogen:GetAssistantResponse",
+    "messages": {
+      "@id": "videogen:messages",
+      "@container": "@list"
+    },
+    "GenerateImageRequest": "videogen:GenerateImageRequest",
+    "imageFileIds": {
+      "@id": "videogen:imageFileIds",
+      "@container": "@list"
+    },
+    "entityIds": {
+      "@id": "videogen:entityIds",
+      "@container": "@list"
+    },
+    "aspectRatio": {
+      "@id": "videogen:aspectRatio",
+      "@type": "@id"
+    },
+    "contentPolicyConfig": {
+      "@id": "videogen:contentPolicyConfig",
+      "@type": "@id"
+    },
+    "watermarkMode": {
+      "@id": "videogen:watermarkMode",
+      "@type": "@id"
+    },
+    "isOutputTemporary": {
+      "@id": "videogen:isOutputTemporary",
+      "@type": "xsd:boolean"
+    },
+    "GenerateVideoClipRequest": "videogen:GenerateVideoClipRequest",
+    "startFrameFileId": {
+      "@id": "videogen:startFrameFileId",
+      "@type": "xsd:string"
+    },
+    "videoFileIds": {
+      "@id": "videogen:videoFileIds",
+      "@container": "@list"
+    },
+    "audioFileIds": {
+      "@id": "videogen:audioFileIds",
+      "@container": "@list"
+    },
+    "spokenDialogue": {
+      "@id": "videogen:spokenDialogue",
+      "@type": "xsd:string"
+    },
+    "voiceDescription": {
+      "@id": "videogen:voiceDescription",
+      "@type": "xsd:string"
+    },
+    "generateAudio": {
+      "@id": "videogen:generateAudio",
+      "@type": "xsd:boolean"
+    },
+    "suppressBackgroundMusic": {
+      "@id": "videogen:suppressBackgroundMusic",
+      "@type": "xsd:boolean"
+    },
+    "GenerateMotionGraphicRequest": "videogen:GenerateMotionGraphicRequest",
+    "fileIds": {
+      "@id": "videogen:fileIds",
+      "@container": "@list"
+    },
+    "transparentBackground": {
+      "@id": "videogen:transparentBackground",
+      "@type": "xsd:boolean"
+    },
+    "subToolModes": {
+      "@id": "videogen:subToolModes",
+      "@type": "@id"
+    },
+    "MotionGraphicSubToolMode": "videogen:MotionGraphicSubToolMode",
+    "MotionGraphicSubToolModes": "videogen:MotionGraphicSubToolModes",
+    "generateImages": {
+      "@id": "videogen:generateImages",
+      "@type": "@id"
+    },
+    "generateVideoClips": {
+      "@id": "videogen:generateVideoClips",
+      "@type": "@id"
+    },
+    "generateVoiceover": {
+      "@id": "videogen:generateVoiceover",
+      "@type": "@id"
+    },
+    "searchStockMedia": {
+      "@id": "videogen:searchStockMedia",
+      "@type": "@id"
+    },
+    "PronunciationReplacement": "videogen:PronunciationReplacement",
+    "original": {
+      "@id": "videogen:original",
+      "@type": "xsd:string"
+    },
+    "replacement": {
+      "@id": "videogen:replacement",
+      "@type": "xsd:string"
+    },
+    "TextToSpeechRequest": "videogen:TextToSpeechRequest",
+    "ttsText": {
+      "@id": "videogen:ttsText",
+      "@type": "xsd:string"
+    },
+    "speechLanguageCode": {
+      "@id": "videogen:speechLanguageCode",
+      "@type": "xsd:string"
+    },
+    "pronunciationReplacements": {
+      "@id": "videogen:pronunciationReplacements",
+      "@container": "@list"
+    },
+    "autoExpandPronunciationReplacements": {
+      "@id": "videogen:autoExpandPronunciationReplacements",
+      "@type": "xsd:boolean"
+    },
+    "voiceSpeed": {
+      "@id": "videogen:voiceSpeed",
+      "@type": "xsd:decimal"
+    },
+    "GenerateSoundEffectRequest": "videogen:GenerateSoundEffectRequest",
+    "promptInfluence": {
+      "@id": "videogen:promptInfluence",
+      "@type": "xsd:decimal"
+    },
+    "GenerateMusicRequest": "videogen:GenerateMusicRequest",
+    "GenerateAvatarRequest": "videogen:GenerateAvatarRequest",
+    "actorEntityId": {
+      "@id": "videogen:actorEntityId",
+      "@type": "xsd:string"
+    },
+    "avatarQuality": {
+      "@id": "videogen:avatarQuality",
+      "@type": "@id"
+    },
+    "audioFileId": {
+      "@id": "videogen:audioFileId",
+      "@type": "xsd:string"
+    },
+    "ImageAssetRequest": "videogen:ImageAssetRequest",
+    "imageFileId": {
+      "@id": "videogen:imageFileId",
+      "@type": "xsd:string"
+    },
+    "ModelQuality": "videogen:ModelQuality",
+    "VideoAssetRequest": "videogen:VideoAssetRequest",
+    "videoFileId": {
+      "@id": "videogen:videoFileId",
+      "@type": "xsd:string"
+    },
+    "StartToolExecutionResponse": "videogen:StartToolExecutionResponse",
+    "toolExecutionId": {
+      "@id": "videogen:toolExecutionId",
+      "@type": "xsd:string"
+    },
+    "JobStatus": "videogen:JobStatus",
+    "ToolSuccessResult": "videogen:ToolSuccessResult",
+    "ErrorRequirement": "videogen:ErrorRequirement",
+    "details": {
+      "@id": "videogen:details"
+    },
+    "ApiError": "videogen:ApiError",
+    "code": {
+      "@id": "videogen:code",
+      "@type": "xsd:string"
+    },
+    "requirement": {
+      "@id": "videogen:requirement"
+    },
+    "internalErrorCode": {
+      "@id": "videogen:internalErrorCode",
+      "@type": "xsd:string"
+    },
+    "ExecutedTool": "videogen:ExecutedTool",
+    "toolType": {
+      "@id": "videogen:toolType",
+      "@type": "xsd:string"
+    },
+    "progressPercentage": {
+      "@id": "videogen:progressPercentage",
+      "@type": "xsd:decimal"
+    },
+    "attemptIndex": {
+      "@id": "videogen:attemptIndex",
+      "@type": "xsd:integer"
+    },
+    "ToolExecutionListResponse": "videogen:ToolExecutionListResponse",
+    "toolExecutions": {
+      "@id": "videogen:toolExecutions",
+      "@container": "@list"
+    },
+    "ToolExecutionWebhookEventName": "videogen:ToolExecutionWebhookEventName",
+    "WorkflowRunWebhookEventName": "videogen:WorkflowRunWebhookEventName",
+    "ProjectExportWebhookEventName": "videogen:ProjectExportWebhookEventName",
+    "FileWebhookEventName": "videogen:FileWebhookEventName",
+    "AssistantMessageWebhookEventName": "videogen:AssistantMessageWebhookEventName",
+    "WebhookEventName": "videogen:WebhookEventName",
+    "WorkflowType": "videogen:WorkflowType",
+    "VisualPacing": "videogen:VisualPacing",
+    "WorkflowVisualStyle": "videogen:WorkflowVisualStyle",
+    "aiStyle": {
+      "@id": "videogen:aiStyle",
+      "@type": "xsd:string"
+    },
+    "restyleFeaturedBRollWithAiStyle": {
+      "@id": "videogen:restyleFeaturedBRollWithAiStyle",
+      "@type": "xsd:boolean"
+    },
+    "WorkflowRgbColor": "videogen:WorkflowRgbColor",
+    "red": {
+      "@id": "videogen:red",
+      "@type": "xsd:integer"
+    },
+    "green": {
+      "@id": "videogen:green",
+      "@type": "xsd:integer"
+    },
+    "blue": {
+      "@id": "videogen:blue",
+      "@type": "xsd:integer"
+    },
+    "WorkflowCaptionBackgroundStyle": "videogen:WorkflowCaptionBackgroundStyle",
+    "backgroundColor": {
+      "@id": "videogen:backgroundColor",
+      "@type": "@id"
+    },
+    "borderRadiusProportion": {
+      "@id": "videogen:borderRadiusProportion",
+      "@type": "xsd:decimal"
+    },
+    "opacityProportion": {
+      "@id": "videogen:opacityProportion",
+      "@type": "xsd:decimal"
+    },
+    "WorkflowCaptionStyle": "videogen:WorkflowCaptionStyle",
+    "fontName": {
+      "@id": "videogen:fontName",
+      "@type": "xsd:string"
+    },
+    "fontSize": {
+      "@id": "videogen:fontSize",
+      "@type": "xsd:decimal"
+    },
+    "fontWeight": {
+      "@id": "videogen:fontWeight",
+      "@type": "xsd:integer"
+    },
+    "textColor": {
+      "@id": "videogen:textColor",
+      "@type": "@id"
+    },
+    "textJustification": {
+      "@id": "videogen:textJustification",
+      "@type": "xsd:string"
+    },
+    "verticalAlignment": {
+      "@id": "videogen:verticalAlignment",
+      "@type": "xsd:string"
+    },
+    "strokeColor": {
+      "@id": "videogen:strokeColor"
+    },
+    "strokeWeight": {
+      "@id": "videogen:strokeWeight",
+      "@type": "xsd:decimal"
+    },
+    "backgroundStyle": {
+      "@id": "videogen:backgroundStyle"
+    },
+    "spokenTextColor": {
+      "@id": "videogen:spokenTextColor"
+    },
+    "spokenTextStrokeColor": {
+      "@id": "videogen:spokenTextStrokeColor"
+    },
+    "persistSpokenTextColor": {
+      "@id": "videogen:persistSpokenTextColor",
+      "@type": "xsd:boolean"
+    },
+    "RemixActionType": "videogen:RemixActionType",
+    "RemixTransitionStyle": "videogen:RemixTransitionStyle",
+    "RemixActionSetBackgroundMusic": "videogen:RemixActionSetBackgroundMusic",
+    "volume": {
+      "@id": "videogen:volume",
+      "@type": "xsd:decimal"
+    },
+    "RemixActionSetLogo": "videogen:RemixActionSetLogo",
+    "position": {
+      "@id": "videogen:position",
+      "@type": "xsd:string"
+    },
+    "sizePercent": {
+      "@id": "videogen:sizePercent",
+      "@type": "xsd:decimal"
+    },
+    "RemixActionEnableCaptions": "videogen:RemixActionEnableCaptions",
+    "captionStyle": {
+      "@id": "videogen:captionStyle"
+    },
+    "RemixActionDisableCaptions": "videogen:RemixActionDisableCaptions",
+    "RemixActionAddTransitions": "videogen:RemixActionAddTransitions",
+    "sectionTransition": {
+      "@id": "videogen:sectionTransition"
+    },
+    "assetTransition": {
+      "@id": "videogen:assetTransition"
+    },
+    "RemixActionAddZoom": "videogen:RemixActionAddZoom",
+    "RemixActionResizeProject": "videogen:RemixActionResizeProject",
+    "RemixActionCleanUpTranscript": "videogen:RemixActionCleanUpTranscript",
+    "removeFillers": {
+      "@id": "videogen:removeFillers",
+      "@type": "xsd:boolean"
+    },
+    "removePauses": {
+      "@id": "videogen:removePauses",
+      "@type": "xsd:boolean"
+    },
+    "fillerWords": {
+      "@id": "videogen:fillerWords",
+      "@container": "@list"
+    },
+    "minPauseSeconds": {
+      "@id": "videogen:minPauseSeconds",
+      "@type": "xsd:decimal"
+    },
+    "RemixActionConvertImagesToVideos": "videogen:RemixActionConvertImagesToVideos",
+    "motionPrompt": {
+      "@id": "videogen:motionPrompt",
+      "@type": "xsd:string"
+    },
+    "muteOutputVideos": {
+      "@id": "videogen:muteOutputVideos",
+      "@type": "xsd:boolean"
+    },
+    "RemixActionRegenerateImages": "videogen:RemixActionRegenerateImages",
+    "stylePrompt": {
+      "@id": "videogen:stylePrompt",
+      "@type": "xsd:string"
+    },
+    "RemixActionUpscaleAssets": "videogen:RemixActionUpscaleAssets",
+    "includeVideos": {
+      "@id": "videogen:includeVideos",
+      "@type": "xsd:boolean"
+    },
+    "includeStockContent": {
+      "@id": "videogen:includeStockContent",
+      "@type": "xsd:boolean"
+    },
+    "RemixActionChangeNarrator": "videogen:RemixActionChangeNarrator",
+    "RemixActionShuffleStockVisuals": "videogen:RemixActionShuffleStockVisuals",
+    "RemixActionGenerateMusic": "videogen:RemixActionGenerateMusic",
+    "RemixActionTranslateProject": "videogen:RemixActionTranslateProject",
+    "changeVoice": {
+      "@id": "videogen:changeVoice",
+      "@type": "xsd:boolean"
+    },
+    "translateImageText": {
+      "@id": "videogen:translateImageText",
+      "@type": "xsd:boolean"
+    },
+    "RemixProjectRequest": "videogen:RemixProjectRequest",
+    "remixActions": {
+      "@id": "videogen:remixActions",
+      "@container": "@list"
+    },
+    "saveAsNewProject": {
+      "@id": "videogen:saveAsNewProject",
+      "@type": "xsd:boolean"
+    },
+    "RemixProjectResponse": "videogen:RemixProjectResponse",
+    "remixActionIds": {
+      "@id": "videogen:remixActionIds",
+      "@container": "@list"
+    },
+    "RemixActionRun": "videogen:RemixActionRun",
+    "remixActionId": {
+      "@id": "videogen:remixActionId",
+      "@type": "xsd:string"
+    },
+    "ListRemixActionsResponse": "videogen:ListRemixActionsResponse",
+    "ScriptToVideoRequest": "videogen:ScriptToVideoRequest",
+    "script": {
+      "@id": "videogen:script",
+      "@type": "xsd:string"
+    },
+    "visualStyle": {
+      "@id": "videogen:visualStyle",
+      "@type": "@id"
+    },
+    "visualPacing": {
+      "@id": "videogen:visualPacing",
+      "@type": "@id"
+    },
+    "language": {
+      "@id": "videogen:language",
+      "@type": "xsd:string"
+    },
+    "featuredBRollFileIds": {
+      "@id": "videogen:featuredBRollFileIds",
+      "@container": "@list"
+    },
+    "workflowAgentContext": {
+      "@id": "videogen:workflowAgentContext",
+      "@type": "xsd:string"
+    },
+    "scenes": {
+      "@id": "videogen:scenes",
+      "@container": "@list"
+    },
+    "autoExport": {
+      "@id": "videogen:autoExport",
+      "@type": "xsd:boolean"
+    },
+    "exportOptions": {
+      "@id": "videogen:exportOptions",
+      "@type": "@id"
+    },
+    "TranscriptWord": "videogen:TranscriptWord",
+    "startSeconds": {
+      "@id": "videogen:startSeconds",
+      "@type": "xsd:decimal"
+    },
+    "endSeconds": {
+      "@id": "videogen:endSeconds",
+      "@type": "xsd:decimal"
+    },
+    "word": {
+      "@id": "videogen:word",
+      "@type": "xsd:string"
+    },
+    "Transcript": "videogen:Transcript",
+    "words": {
+      "@id": "videogen:words",
+      "@container": "@list"
+    },
+    "SceneDescriptionRange": "videogen:SceneDescriptionRange",
+    "VoiceoverToVideoRequest": "videogen:VoiceoverToVideoRequest",
+    "logoFileId": {
+      "@id": "videogen:logoFileId",
+      "@type": "xsd:string"
+    },
+    "SlideshowToVideoRequest": "videogen:SlideshowToVideoRequest",
+    "slideScripts": {
+      "@id": "videogen:slideScripts",
+      "@container": "@list"
+    },
+    "slideshowThemeEntityId": {
+      "@id": "videogen:slideshowThemeEntityId",
+      "@type": "xsd:string"
+    },
+    "SceneGeneration": "videogen:SceneGeneration",
+    "GenerateStoryboardScene": "videogen:GenerateStoryboardScene",
+    "actorEntityIds": {
+      "@id": "videogen:actorEntityIds",
+      "@container": "@list"
+    },
+    "productEntityIds": {
+      "@id": "videogen:productEntityIds",
+      "@container": "@list"
+    },
+    "visualStyleEntityId": {
+      "@id": "videogen:visualStyleEntityId",
+      "@type": "xsd:string"
+    },
+    "voiceoverScript": {
+      "@id": "videogen:voiceoverScript",
+      "@type": "xsd:string"
+    },
+    "StoryboardToVideoRequest": "videogen:StoryboardToVideoRequest",
+    "defaultGeneration": {
+      "@id": "videogen:defaultGeneration"
+    },
+    "defaultDurationSeconds": {
+      "@id": "videogen:defaultDurationSeconds",
+      "@type": "xsd:integer"
+    },
+    "PromptToVideoClipRequest": "videogen:PromptToVideoClipRequest",
+    "StartWorkflowRunResponse": "videogen:StartWorkflowRunResponse",
+    "workflowRunId": {
+      "@id": "videogen:workflowRunId",
+      "@type": "xsd:string"
+    },
+    "WorkflowRun": "videogen:WorkflowRun",
+    "exportId": {
+      "@id": "videogen:exportId",
+      "@type": "xsd:string"
+    },
+    "exportFileId": {
+      "@id": "videogen:exportFileId",
+      "@type": "xsd:string"
+    },
+    "WorkflowRunListResponse": "videogen:WorkflowRunListResponse",
+    "workflowRuns": {
+      "@id": "videogen:workflowRuns",
+      "@container": "@list"
+    },
+    "AssistantMessageWebhookPayload": "videogen:AssistantMessageWebhookPayload",
+    "event": {
+      "@id": "videogen:event",
+      "@type": "@id"
+    },
+    "occurredAt": {
+      "@id": "videogen:occurredAt",
+      "@type": "xsd:integer"
+    },
+    "WorkflowRunWebhookPayload": "videogen:WorkflowRunWebhookPayload",
+    "ProjectExportWebhookPayload": "videogen:ProjectExportWebhookPayload",
+    "ProjectResponse": "videogen:ProjectResponse",
+    "ListProjectsResponse": "videogen:ListProjectsResponse",
+    "projects": {
+      "@id": "videogen:projects",
+      "@container": "@list"
+    },
+    "ExportProjectQuality": "videogen:ExportProjectQuality",
+    "ExportProjectRequest": "videogen:ExportProjectRequest",
+    "endScreenMode": {
+      "@id": "videogen:endScreenMode",
+      "@type": "@id"
+    },
+    "deliveryDestinations": {
+      "@id": "videogen:deliveryDestinations",
+      "@container": "@list"
+    },
+    "ExportDeliveryDestination": "videogen:ExportDeliveryDestination",
+    "integrationConnectionId": {
+      "@id": "videogen:integrationConnectionId",
+      "@type": "xsd:string"
+    },
+    "slackChannelId": {
+      "@id": "videogen:slackChannelId",
+      "@type": "xsd:string"
+    },
+    "googleDriveFolderId": {
+      "@id": "videogen:googleDriveFolderId",
+      "@type": "xsd:string"
+    },
+    "ExportProjectResponse": "videogen:ExportProjectResponse"
+  },
+  "@type": "schema:Dataset",
+  "schema:name": "VideoGen API JSON-LD context",
+  "schema:description": "A JSON-LD @context for the objects VideoGen's own API contract declares: one class per component schema, one property per declared field, typed from the contract. Derived by script (derive-json-ld.py, 2026-10-02) from openapi/videogen-io-openapi.json.",
+  "dcterms:created": "2026-10-02",
+  "dcterms:source": [
+    "openapi/videogen-io-openapi.json"
+  ]
+}

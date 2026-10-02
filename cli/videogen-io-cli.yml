@@ -1,0 +1,31 @@
+generated: '2026-10-02'
+method: searched
+generator: extract-docs-artifacts.py (local)
+source: https://docs.videogen.io/libraries.md
+sources:
+- https://docs.videogen.io/libraries.md
+- https://docs.videogen.io/libraries/typescript.md
+- https://docs.videogen.io/libraries/python.md
+- https://docs.videogen.io/libraries/cli.md
+install:
+- method: npm
+  command: npm install -g @videogen/cli
+- method: brew
+  command: brew install video-gen/tap/videogen
+commands:
+- group: workflows
+  commands:
+  - script-to-video
+  - script-to-video --wait
+- group: tools
+  commands:
+  - generate-image
+  - generate-image --wait
+- group: files
+  commands:
+  - upload
+- group: account
+  commands:
+  - get-me
+binary: videogen
+docs: https://docs.videogen.io/libraries.md

@@ -1,0 +1,20 @@
+generated: '2026-10-02'
+method: derived
+generator: derive-problem-types.py
+source:
+- openapi/videogen-io-openapi.json
+format: custom
+envelope:
+  media_type: application/json
+  schema: ApiError
+coverage:
+  operations: 59
+  statuses_declared: 1
+problems:
+- status: default
+  title: null
+  description: Error
+  operations: 59
+  media_types:
+  - application/json
+  schema: ApiError

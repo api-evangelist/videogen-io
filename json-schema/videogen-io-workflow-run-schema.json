@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/videogen-io/main/json-schema/videogen-io-workflow-run-schema.json",
+  "title": "WorkflowRun",
+  "x-generated": "2026-10-02",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/videogen-io-openapi.json#/components/schemas/WorkflowRun",
+  "type": "object",
+  "required": [
+    "workflowRunId",
+    "status",
+    "workflowType",
+    "projectId",
+    "projectUrl",
+    "progressPercentage",
+    "attemptIndex",
+    "error",
+    "exportId",
+    "downloadUrl",
+    "downloadUrlExpiresAt",
+    "thumbnailUrl",
+    "thumbnailUrlExpiresAt",
+    "exportFileId"
+  ],
+  "properties": {
+    "workflowRunId": {
+      "type": "string",
+      "description": "Opaque workflow run id."
+    },
+    "status": {
+      "$ref": "#/$defs/JobStatus"
+    },
+    "workflowType": {
+      "$ref": "#/$defs/WorkflowType"
+    },
+    "progressPercentage": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Completion progress for the current attempt (0-100). Always `100` when `status` is `succeeded`."
+    },
+    "attemptIndex": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Zero-based index of the current or most recent execution attempt."
+    },
+    "projectId": {
+      "type": "string",
+      "description": "Id of the project created for this workflow run (e.g. `vg_proj_...`)."
+    },
+    "projectUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "Deep link to open this project in the VideoGen web editor. Not required for an API-only integration: store `projectId` and use the Projects API (export, remix, metadata). Use `projectUrl` when a person should open the project in the app to review or edit it manually. The project is visible only to members of your team and any project collaborators, the same access model as a project created in the dashboard."
+    },
+    "error": {
+      "description": "Error details. Always present as a field; `null` unless `status` is `failed`.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ApiError"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "exportId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Opaque export id (e.g. `vg_expo_...`) when this run was started with `autoExport: true` and the export succeeded. Always present as a field; `null` otherwise."
+    },
+    "downloadUrl": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uri",
+      "description": "Private signed MP4 download URL when `autoExport` succeeded. Always present as a field; `null` otherwise. Valid for 7 days from when it was signed. This endpoint re-signs the URL when it is within an hour of expiring."
+    },
+    "downloadUrlExpiresAt": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Seconds since epoch (Unix timestamp) when `downloadUrl` expires. `null` while `downloadUrl` is null."
+    },
+    "thumbnailUrl": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uri",
+      "description": "Private signed thumbnail URL when `autoExport` succeeded. Always present as a field; `null` otherwise (and when no thumbnail is available). Re-signed automatically on the same terms as `downloadUrl`."
+    },
+    "thumbnailUrlExpiresAt": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Seconds since epoch (Unix timestamp) when `thumbnailUrl` expires. `null` while `thumbnailUrl` is null."
+    },
+    "exportFileId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "File id (e.g. `vg_file_...`) of the rendered MP4 when `autoExport` succeeded. Always present as a field; `null` otherwise. Pass it to `POST /v1/files/{fileId}/hydrate` for a fresh signed URL."
+    }
+  },
+  "$defs": {
+    "ApiError": {
+      "type": "object",
+      "description": "Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:\n\n- `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.\n\nCommon `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.\n",
+      "required": [
+        "message"
+      ],
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "Human-readable error description. For display and logging only; do not branch on its exact text."
+        },
+        "code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies."
+        },
+        "requirement": {
+          "description": "What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ErrorRequirement"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "internalErrorCode": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable."
+        }
+      }
+    },
+    "ErrorRequirement": {
+      "type": "object",
+      "description": "What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`)."
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Key-value pairs with requirement-specific context (e.g. the add-on id to purchase)."
+        }
+      }
+    },
+    "JobStatus": {
+      "type": "string",
+      "description": "Lifecycle status shared by every asynchronous job (tool executions, workflow runs, remix actions, project exports, and timeline interchange jobs). `pending` and `running` are in-progress; `succeeded`, `failed`, and `cancelled` are terminal.",
+      "enum": [
+        "pending",
+        "running",
+        "succeeded",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "WorkflowType": {
+      "type": "string",
+      "description": "Workflow type identifier.",
+      "enum": [
+        "SCRIPT_TO_VIDEO",
+        "VOICEOVER_TO_VIDEO",
+        "SLIDESHOW_TO_VIDEO",
+        "STORYBOARD_TO_VIDEO",
+        "PROMPT_TO_VIDEO_CLIP"
+      ]
+    }
+  }
+}

@@ -1,0 +1,79 @@
+generated: '2026-10-02'
+method: searched
+generator: extract-docs-artifacts.py (local)
+source: https://docs.videogen.io/changelog
+sources:
+- https://docs.videogen.io/changelog
+- https://docs.videogen.io/changelog.md
+- https://docs.videogen.io/changelog/2026/4/12.md
+- https://docs.videogen.io/changelog/2026/4/22.md
+entries:
+- breaking: false
+  highlights:
+  - Workflow start requests can now render an MP4 before the run is marked succeeded.
+  - 'Set `autoExport: true` (REST and SDK default is still `false`).'
+  - MCP workflow tools default `autoExport` to `true`.
+  - Zapier, Make, n8n, and Pipedream always auto-export (the field is not shown) and wait until the MP4 is ready.
+  date: '2026-09-14'
+- breaking: false
+  highlights:
+  - The no-code apps now start a VideoGen workflow and wait until the exported MP4 is ready.
+  - The only instant trigger is `project_export.succeeded`.
+  - Individual media tools, file upload, project lookup, and other webhook triggers are no longer in those apps.
+  date: '2026-09-13'
+- breaking: false
+  highlights:
+  - Workflow start requests can now render an MP4 before the run is marked succeeded.
+  - 'Set `autoExport: true` (REST default is still `false` ; MCP and Zapier / Make / n8n / Pipedream default true).'
+  - When it is on, wait until status is succeeded and use `downloadUrl`.
+  date: '2026-09-03'
+- breaking: false
+  highlights:
+  - Omitting `durationSeconds` on POST /v1/tools/generate-video-clip now estimates clip length at generate time so spoken text or the visual beat
+    fits.
+  - Previously a missing duration was treated as 6 seconds, which rejected spoken clips longer than 6 seconds.
+  - Pass a whole number from 1 to 30 to pin an exact length.
+  date: '2026-08-27'
+- breaking: false
+  highlights:
+  - '`hideFromUi` now also hides the project from Home and Projects unless the viewer turns on Show hidden projects.'
+  - Direct project URLs and API get/list still work.
+  - Defaults to false.
+  date: '2026-08-26'
+- breaking: false
+  highlights:
+  - You can subscribe to project export completion instead of polling the export GET.
+  - Every `voiceId` field also accepts a catalog `displayName` (for example `Matilda` or `Charlie`) in addition to a `vg_voic_…` id.
+  date: '2026-08-25'
+- breaking: false
+  highlights:
+  - Signed file download and thumbnail URLs in API responses now use VideoGen hosts.
+  - '`uploadUrl` for PUT uploads is unchanged.'
+  date: '2026-08-21'
+- breaking: false
+  highlights:
+  - Version 2.1 of the TypeScript SDK, Python SDK, CLI, MCP server, and OpenClaw plugin.
+  - List VideoGen’s built-in catalog on the Entities API, generate spoken lip‑synced clips, theme slideshow‑to‑video decks, and install the OpenClaw
+    plugin from npm or ClawHub.
+  date: '2026-08-19'
+- breaking: false
+  highlights:
+  - Slideshow‑to‑video no longer requires a theme when you are converting an uploaded PDF or PowerPoint’s original pages.
+  date: '2026-08-18'
+- breaking: false
+  highlights:
+  - Slideshow‑to‑video now requires a slideshow theme so every generated slide shares one design system.
+  date: '2026-08-17'
+- breaking: false
+  highlights:
+  - '`POST /v1/tools/generate-image` now accepts optional actor, product, and visual‑style entity ids.'
+  - The model uses them as identity/reference the same way in‑app image generation does.
+  date: '2026-08-14'
+- breaking: false
+  highlights:
+  - POST /v1/tools/generate-video-clip now accepts `spokenDialogue` and `voiceDescription`.
+  - The model synthesizes the voice from that text.
+  date: '2026-08-14'
+current_version: v2.2.0
+note: Versioning scheme follows semantic versioning (vMAJOR.MINOR.PATCH).
+docs: https://docs.videogen.io/changelog

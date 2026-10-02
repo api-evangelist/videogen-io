@@ -1,0 +1,25 @@
+generated: '2026-10-02'
+method: searched
+generator: extract-docs-artifacts.py (local)
+source: https://docs.videogen.io/pagination.md
+sources:
+- https://docs.videogen.io/pagination.md
+- https://docs.videogen.io/getting-started.md
+- https://help.videogen.io/en/collections/14592492-getting-started
+- https://docs.videogen.io/authentication.md
+idempotency:
+  coverage: none
+  evidence: The documentation does not describe any idempotency key mechanism.
+pagination:
+  style: cursor
+  params:
+  - limit
+  - cursor
+  response_fields:
+  - hasMore
+  - nextCursor
+  evidence: Every list endpoint uses cursor‑based pagination with `limit` (default 50, min 1, max 200) and `cursor` query parameters; responses
+    include `hasMore` (boolean) and `nextCursor` (string|null).
+error_envelope: 'object with a `message` field, e.g. {"message": "Unauthorized"}'
+authentication: 'Bearer token in the `Authorization` header, e.g. `Authorization: Bearer sk_videogen_live_...`'
+docs: https://docs.videogen.io/pagination.md

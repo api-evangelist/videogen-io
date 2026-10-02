@@ -1,0 +1,55 @@
+generated: '2026-10-02'
+method: searched
+generator: extract-docs-artifacts.py (local)
+source: https://docs.videogen.io/handling-async-tasks/webhooks.md
+sources:
+- https://docs.videogen.io/handling-async-tasks/webhooks.md
+- https://docs.videogen.io/webhook-events
+- https://docs.videogen.io/webhook-events.md
+- https://docs.videogen.io/webhook-events/webhook-events/tool-execution-succeeded.md
+description: VideoGen sends webhook events when asynchronous work completes for tool executions, workflow runs, project exports, file uploads,
+  and assistant messages.
+events:
+- event: tool_execution.succeeded
+  description: Delivered when a tool execution completes successfully.
+- event: tool_execution.failed
+  description: Delivered when a tool execution reaches a terminal failed state.
+- event: tool_execution.cancelled
+  description: Delivered when a tool execution is cancelled before completing.
+- event: workflow_run.succeeded
+  description: Delivered when a workflow run reaches a terminal succeeded state.
+- event: workflow_run.failed
+  description: Delivered when a workflow run reaches a terminal failed state.
+- event: workflow_run.cancelled
+  description: Delivered when a workflow run is cancelled before completing.
+- event: project_export.succeeded
+  description: Delivered when a project export finishes successfully.
+- event: project_export.failed
+  description: Delivered when a project export fails.
+- event: project_export.cancelled
+  description: Delivered when a project export is cancelled.
+- event: file.upload.completed
+  description: Delivered when file bytes are received and stored successfully.
+- event: file.upload.failed
+  description: Delivered when a file upload or its initial processing fails.
+- event: file.playback_ready
+  description: Delivered when HLS streaming for the file becomes available.
+- event: file.download_ready
+  description: Delivered when at least one static rendition of the file is ready for download.
+- event: file.analysis_completed
+  description: Delivered when description, transcript, and vector embedding for the file are ready.
+- event: file.analysis_failed
+  description: Delivered when automated analysis of the file fails.
+- event: assistant_message.succeeded
+  description: Delivered when an assistant message reaches a terminal succeeded state.
+- event: assistant_message.failed
+  description: Delivered when an assistant message reaches a terminal failed state.
+- event: assistant_message.cancelled
+  description: Delivered when an assistant message is cancelled before completing.
+delivery:
+  signature: 'Signature verification follows the Standard Webhooks spec using three headers: `webhook-id` (unique message ID), `webhook-timestamp`
+    (Unix timestamp of the attempt), and `webhook-signature` (HMAC‑SHA256 signature). A `signingSecret` is returned when the webhook endpoint
+    is created and must be used to verify the signature.'
+note: If the endpoint returns a non‑2xx status code or does not respond within 15 seconds, VideoGen retries delivery with exponential backoff.
+  The `webhook-id` header can be used to deduplicate retries.
+docs: https://docs.videogen.io/handling-async-tasks/webhooks.md

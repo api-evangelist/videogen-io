@@ -1,0 +1,337 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/videogen-io/main/json-schema/videogen-io-file-info-schema.json",
+  "title": "FileInfo",
+  "description": "Metadata for a generated file. Obtain ids from tool results or `GET /v1/files`.",
+  "x-generated": "2026-10-02",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/videogen-io-openapi.json#/components/schemas/FileInfo",
+  "type": "object",
+  "required": [
+    "fileId",
+    "scope"
+  ],
+  "properties": {
+    "fileId": {
+      "type": "string",
+      "description": "File id (e.g. `vg_file_...`)."
+    },
+    "type": {
+      "description": "File type. Null when the file is still being processed and the type has not yet been determined.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FileType"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "scope": {
+      "type": "string",
+      "enum": [
+        "GLOBAL",
+        "PROJECT",
+        "EXPORT",
+        "TEMPORARY",
+        "ENTITY"
+      ],
+      "description": "File scope.\n\n- `GLOBAL`: user-uploaded or standalone generated files that persist indefinitely.\n- `PROJECT`: project-specific files (e.g. text-to-speech clips in a generated project).\n- `EXPORT`: project exports.\n- `TEMPORARY`: short-lived files guaranteed to be available for 24 hours, after which they may be archived at any time. Not analyzed (no description, transcript, or embedding).\n- `ENTITY`: files attached to a reusable entity (e.g. a voice sample for an actor), shared across your team.\n"
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Display name for the file."
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "durationSeconds": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Duration in seconds for video and audio files. Null for images."
+    },
+    "transcript": {
+      "description": "Timed transcript for video and audio files, when available, as a `Transcript` object with timed `words`. Null for images or when no transcript has been generated. For plain transcript text, use `transcriptText`.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Transcript"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "transcriptText": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Plain transcript text for video and audio files, when available. Null for images or when no transcript has been generated."
+    },
+    "downloadUrl": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uri",
+      "description": "Private signed URL for the highest-quality downloadable rendition, provided at the top level for convenience. Valid for 7 days from when it was signed. `null` when the rendition is still processing or the URL has not been signed yet. See `downloadUrlExpiresAt` for the exact expiry and `downloadSource` for the full rendition metadata; call `POST /v1/files/{fileId}/hydrate` to refresh it."
+    },
+    "downloadUrlExpiresAt": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Seconds since epoch (Unix timestamp) when `downloadUrl` expires. `null` when `downloadUrl` is null."
+    },
+    "thumbnailUrl": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uri",
+      "description": "Private signed URL for the thumbnail rendition, provided at the top level for convenience. Valid for 7 days from when it was signed. `null` for file types that have no thumbnail (e.g. audio) or when it has not been signed yet. See `thumbnailSource` for the full rendition metadata."
+    },
+    "thumbnailUrlExpiresAt": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Seconds since epoch (Unix timestamp) when `thumbnailUrl` expires. `null` when `thumbnailUrl` is null."
+    },
+    "thumbnailSource": {
+      "description": "Thumbnail image source. Populated after hydration.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FileSource"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "previewSource": {
+      "description": "Preview rendition source (720p for video, resized for images). Populated after hydration.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FileSource"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "downloadSource": {
+      "description": "Highest-quality downloadable rendition. Populated after hydration.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FileSource"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "hlsSource": {
+      "description": "Private HLS streaming source. Populated for video and audio files once streaming renditions are ready. Uses a signed token; treat like other signed sources.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FileSource"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "isPublicPreviewEnabled": {
+      "type": "boolean",
+      "description": "Whether public preview is enabled for this file. When true, `staticPublicPreviewSource` is populated for all file types. For video and audio, `publicHlsUrl` and `publicPlaybackId` are also populated once embed streaming is ready."
+    },
+    "staticPublicPreviewSource": {
+      "description": "Permanent public URL for the file's highest-quality rendition. Populated when `isPublicPreviewEnabled` is true. Does not expire (`expiresAt` is null). Use for direct links to images, downloads, or any file type. For embedded video or audio players, prefer `publicPlaybackId`.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FileSource"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "publicHlsUrl": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Public HLS streaming URL for video and audio. Only present when `isPublicPreviewEnabled` is true and embed streaming is ready. Prefer `publicPlaybackId` with `@videogen/player` for embeds."
+    },
+    "publicPlaybackId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Encoded public playback id (e.g. `vg_play_...`) for video and audio embeds. Pass this to `@videogen/player` or `@videogen/player-react`. Only present when `isPublicPreviewEnabled` is true and embed streaming is ready. For a permanent direct file URL (any type), use `staticPublicPreviewSource` instead."
+    },
+    "sourceToolType": {
+      "type": "string",
+      "description": "Tool type that generated this file (e.g. `GENERATE_IMAGE`, `TEXT_TO_SPEECH`). Only present when the file was created by a tool execution."
+    },
+    "sourceToolExecutionId": {
+      "type": "string",
+      "description": "Execution id of the tool call that generated this file (e.g. `vg_tool_...`). Only present when the file was created by a tool execution."
+    },
+    "fileAnalysisMetadata": {
+      "description": "Background analysis state for the file (used to populate `description`, `transcript`, `durationSeconds`, and the search embedding). Omitted when the file was returned via a path that does not check analysis progress (e.g. tool-result inline files and webhook payloads).",
+      "$ref": "#/$defs/FileAnalysisMetadata"
+    }
+  },
+  "$defs": {
+    "FileAnalysisMetadata": {
+      "type": "object",
+      "description": "Background analysis state for a file. Background analysis populates `description`, `transcript`, `durationSeconds`, and the search embedding after a file is uploaded or generated; this object lets you render a progress indicator while it runs (and skip rendering once it's done).\n",
+      "required": [
+        "analysisLoadingState",
+        "analysisProgressPercentage"
+      ],
+      "properties": {
+        "analysisLoadingState": {
+          "type": "string",
+          "enum": [
+            "UNATTEMPTED",
+            "LOADING",
+            "FULFILLED",
+            "REJECTED"
+          ],
+          "description": "Coarse-grained analysis state.\n\n- `UNATTEMPTED`: analysis has not started yet.\n- `LOADING`: analysis is in progress.\n- `FULFILLED`: analysis completed successfully. `description`, `transcript`, and `durationSeconds` are now populated where applicable for the file's type.\n- `REJECTED`: analysis failed permanently and will not be retried.\n"
+        },
+        "analysisProgressPercentage": {
+          "type": "number",
+          "description": "Progress in `[0, 100]`. Always `100` when `analysisLoadingState` is `FULFILLED`. Otherwise the most recent in-flight progress reported by the analysis task (or `0` if no progress has been reported yet)."
+        },
+        "analysisAttemptIndex": {
+          "type": "integer",
+          "description": "Zero-based index of the current analysis task attempt. Only present while analysis is still loading (`UNATTEMPTED` or `LOADING`); omitted once analysis reaches a terminal state."
+        }
+      }
+    },
+    "FileSource": {
+      "type": "object",
+      "description": "A rendition source for a file (e.g. thumbnail, preview, download). Contains a signed URL and metadata.",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "ready",
+            "failed",
+            "skipped"
+          ],
+          "description": "`pending`: asset is still processing or has not been hydrated yet. `ready`: signed URL is available. `failed`: rendition generation failed. `skipped`: rendition does not apply to this file type (e.g. thumbnail for audio)."
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Signed URL. Present when status is `ready` and file has been recently hydrated. If missing, call the hydrate endpoint."
+        },
+        "expiresAt": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Seconds since epoch (Unix timestamp) when the signed URL expires."
+        },
+        "width": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Rendition width in pixels, when known."
+        },
+        "height": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Rendition height in pixels, when known."
+        },
+        "fileBytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "File size in bytes, when known."
+        }
+      }
+    },
+    "FileType": {
+      "type": "string",
+      "enum": [
+        "IMAGE",
+        "VIDEO",
+        "AUDIO",
+        "PDF",
+        "SLIDESHOW",
+        "TEXT",
+        "LOTTIE"
+      ],
+      "description": "File type. `TEXT` covers plain-text and editor-interchange documents; `LOTTIE` is a JSON animation."
+    },
+    "Transcript": {
+      "type": "object",
+      "required": [
+        "words"
+      ],
+      "description": "A transcript of an audio file, as timed words in order.",
+      "properties": {
+        "languageCode": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Optional BCP-47 language code of the spoken audio (e.g. `en`, `es`). Used to tag the transcript's language; omit if unknown."
+        },
+        "words": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TranscriptWord"
+          },
+          "description": "The transcript words, sorted by `startSeconds` and non-overlapping. Must contain at least one word."
+        }
+      }
+    },
+    "TranscriptWord": {
+      "type": "object",
+      "required": [
+        "startSeconds",
+        "endSeconds",
+        "word"
+      ],
+      "description": "A single timed word of a transcript.",
+      "properties": {
+        "startSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Start time of the word in seconds from the beginning of the audio."
+        },
+        "endSeconds": {
+          "type": "number",
+          "description": "End time of the word in seconds from the beginning of the audio. Must be greater than `startSeconds`."
+        },
+        "word": {
+          "type": "string",
+          "description": "The spoken word, used verbatim for narration timing and captions."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,221 @@
+# VideoGen API
+
+> HTTP API with TypeScript and Python SDKs for generating videos with VideoGen. The core surface is end-to-end video workflows (script-to-video, voiceover-to-video, slideshow-to-video): `POST /v1/workflows/*` creates a project and renders a finished video with visuals, narration, and captions. Poll workflow runs, list and export projects, and subscribe to `workflow_run.*` webhooks. The API also exposes standalone asynchronous media tools (generate-image, generate-video-clip, text-to-speech, generate-sound-effect, generate-music, generate-motion-graphic, generate-avatar, image/video upscaling, background removal, vectorization), file management, reusable entities (characters and visual styles), an asynchronous AI Assistant chat API, avatar/TTS/language catalogues, and an account lookup (`GET /v1/me`) for connection tests. Authentication uses a bearer API key or, for apps acting on behalf of other VideoGen users, an OAuth 2.1 access token ("Sign in with VideoGen"). Base URL: `https://api.videogen.io/v1`. All numeric timestamp fields (`expiresAt`, `occurredAt`, `createdAt`, etc.) are seconds since the Unix epoch (UTC). Machine-readable API spec: `/openapi.json` and `/openapi.yaml`. MCP docs surface for AI clients: `/_mcp/server`.
+>
+> Product context: [Marketing site llms.txt](https://videogen.io/llms.txt) · [Web app llms.txt](https://app.videogen.io/llms.txt)
+
+## Guides
+
+- [Introduction](https://docs.videogen.io/introduction.md): Overview of the VideoGen API: end-to-end video workflows, the run-remix-export flow, the async execution model, base URL, and conventions.
+- [Getting started](https://docs.videogen.io/getting-started.md): Set up the VideoGen API: create an API key, install the TypeScript or Python SDK, and follow the linear path to generate, edit, and export a video.
+  - [Run a workflow](https://docs.videogen.io/run-a-workflow.md): Step one of the VideoGen flow: start a workflow with POST /v1/workflows/*, then poll the run until the video is ready.
+  - [Apply remix actions](https://docs.videogen.io/apply-remix-actions.md): Step two of the VideoGen flow: apply remix actions (background music, logo, captions, transitions, natural-language edits) to a project.
+  - [Export your video](https://docs.videogen.io/export-your-video.md): Step three of the VideoGen flow: export a project with POST /v1/projects/{projectId}/export, poll for the download URL, and fetch the MP4.
+- [Workflows](https://docs.videogen.io/workflows.md): Start script-to-video, voiceover-to-video, or slideshow-to-video workflows via POST /v1/workflows/*. Poll GET /v1/workflows/runs/{workflowRunId} or subscribe to workflow_run.* webhooks.
+  - [Remix actions](https://docs.videogen.io/remix-actions.md): Reference for VideoGen remix actions: background music, logo overlay, caption visibility and style, section and asset transitions, and natural-language editor edits.
+  - [AI styles](https://docs.videogen.io/ai-styles.md): Example descriptions to pass as aiStyle when starting a workflow with an AI_IMAGE visual style.
+- [Handling async tasks](https://docs.videogen.io/handling-async-tasks.md): How VideoGen async work: tool executions and workflow runs return ids immediately, then you poll or use webhooks for the result.
+  - [Polling](https://docs.videogen.io/handling-async-tasks/polling.md): Poll GET endpoints for async status, or use SDK poll helpers for tool executions, workflow runs, and project exports.
+  - [Webhooks](https://docs.videogen.io/handling-async-tasks/webhooks.md): Register webhook endpoints to receive tool_execution.*, workflow_run.*, file.*, and assistant_message.* events instead of polling.
+- [File uploads](https://docs.videogen.io/file-uploads.md): Create a presigned upload URL, PUT file bytes, and poll until processing completes.
+- [File hydration](https://docs.videogen.io/file-hydration.md): Call POST /v1/files/{fileId}/hydrate to get fresh signed URLs for thumbnails, previews, and downloads, or use the getHydratedFile SDK helper.
+- [Embedding videos](https://docs.videogen.io/embedding-videos.md): Enable public preview, get a playback ID or permanent public URL, and use @videogen/player or @videogen/player-react to render a branded player.
+- [Use with AI agents](https://docs.videogen.io/use-with-ai-agents.md): Add VideoGen media generation to AI agents via MCP or the TypeScript/Python SDK. Includes an AGENTS.md snippet and the VideoGen API agent skill.
+- [Examples](https://docs.videogen.io/examples.md): Example apps demonstrating the VideoGen API with popular frameworks including Next.js, FastAPI, Vercel AI SDK, and OpenAI Agents SDK.
+- [Authentication](https://docs.videogen.io/authentication.md): Create an API key from the VideoGen dashboard, set the Authorization bearer header, and keep credentials safe with environment variables.
+- [Sign in with VideoGen (OAuth)](https://docs.videogen.io/oauth.md): OAuth 2.1 (authorization code with PKCE) so your app can act on behalf of other VideoGen users without API keys: discovery via protected-resource metadata, the authorization flow, scopes, and using the access token as a bearer credential.
+- [Errors](https://docs.videogen.io/errors.md): Error response format, HTTP status codes, and common error codes returned by the VideoGen API.
+- [Pagination](https://docs.videogen.io/pagination.md): How cursor pagination works on VideoGen list endpoints: limit and cursor query params, hasMore and nextCursor response fields, and how to fetch every page.
+- [Rate limits](https://docs.videogen.io/rate-limits.md): Per-endpoint rate limits for the VideoGen API, including headers and best practices for handling 429 responses.
+
+## Libraries & SDKs
+
+- [Libraries & SDKs](https://docs.videogen.io/libraries.md): Official TypeScript and Python SDKs and a CLI for the VideoGen API, with links to GitHub, package registries, and per-library documentation.
+- [TypeScript SDK](https://docs.videogen.io/libraries/typescript.md): Install and configure the @videogen/sdk TypeScript package. Covers client setup, video workflows, tool execution polling, file uploads/downloads, and webhook verification.
+- [Python SDK](https://docs.videogen.io/libraries/python.md): Install and configure the videogen Python package. Covers sync and async clients, video workflows, tool execution polling, file uploads/downloads, and webhook verification.
+- [CLI](https://docs.videogen.io/libraries/cli.md): Install and use the VideoGen CLI, a single self-contained binary for calling the VideoGen API from your terminal, scripts, and CI.
+- [MCP server](https://docs.videogen.io/libraries/mcp.md): Configure the VideoGen Model Context Protocol server (hosted remote, recommended, or the local @videogen/mcp package) that exposes 50 tools: 46 VideoGen API tools plus 4 operational guidance tools. Covers workflows, media tools, projects, files, entities, resources, account access, composite wait/pollIntervalMs/timeoutMs controls, and the MCP-tool-to-REST-endpoint mapping.
+- [n8n](https://docs.videogen.io/libraries/n8n.md): Start a VideoGen workflow from n8n; the node waits and returns the MP4 URLs. Optional `project_export.succeeded` trigger.
+- [Pipedream](https://docs.videogen.io/libraries/pipedream.md): Start a VideoGen workflow from Pipedream; the action waits and returns the MP4 URLs. Optional `project_export.succeeded` trigger.
+- [Postman](https://docs.videogen.io/libraries/postman.md): Call the VideoGen API from Postman.
+- [ChatGPT](https://docs.videogen.io/libraries/chatgpt.md): Use VideoGen from ChatGPT.
+
+## REST API reference
+
+- [REST API reference (site)](https://docs.videogen.io/rest-api-reference): Generated API explorer for every REST endpoint.
+- [REST API overview](https://docs.videogen.io/rest-api-reference.md): Quick reference for the VideoGen REST API: base URL, authentication, request format, and response conventions.
+
+## Workflows
+
+- [Script to video](https://docs.videogen.io/rest-api-reference/workflows/script-to-video.md): Create a project and render a narrated video from a script, used verbatim. The primary entry point.
+- [Voiceover to video](https://docs.videogen.io/rest-api-reference/workflows/voiceover-to-video.md): Build a video from an uploaded voiceover file (upload via the Files API first).
+- [Slideshow to video](https://docs.videogen.io/rest-api-reference/workflows/slideshow-to-video.md): Build a narrated video from an uploaded PDF or PowerPoint file.
+- [Prompt to video clip](https://docs.videogen.io/rest-api-reference/workflows/prompt-to-video-clip.md): Create a project and generate one short AI video clip from a text prompt (opening frame, then animate).
+- [List workflow runs](https://docs.videogen.io/rest-api-reference/workflows/list-workflow-runs.md): List workflow runs, most recent first. Cursor-paginated; see [Pagination](https://docs.videogen.io/pagination.md).
+- [Get workflow run status](https://docs.videogen.io/rest-api-reference/workflows/get-workflow-run.md): Poll a workflow run by `workflowRunId` for status, progress, and `projectId` (plus optional `projectUrl` for the app editor).
+- [Cancel a workflow run](https://docs.videogen.io/rest-api-reference/workflows/cancel-workflow-run.md): Request cancellation of an in-progress workflow run.
+
+## Projects
+
+- [List projects](https://docs.videogen.io/rest-api-reference/projects/list-projects.md): List projects, most recently updated first (`selfOnly` scopes to the key owner; API-created only by default, pass `includeUiProjects=true` for dashboard projects too). Cursor-paginated; see [Pagination](https://docs.videogen.io/pagination.md).
+- [Get project metadata](https://docs.videogen.io/rest-api-reference/projects/get-project.md): Title, aspect ratio, status, and optional `projectUrl` (app editor link; use `projectId` for API-only flows).
+- [Export a project as MP4](https://docs.videogen.io/rest-api-reference/projects/export-project.md): Start an MP4 export; returns an `exportId`.
+- [List project exports](https://docs.videogen.io/rest-api-reference/projects/list-project-exports.md): List a project's export ids, newest first.
+- [Get project export](https://docs.videogen.io/rest-api-reference/projects/get-project-export.md): Poll an export by `exportId`. When `status` is `succeeded` it returns `downloadUrl`/`thumbnailUrl` plus the full hydrated export `file`. Those signed URLs are private and valid for 7 days (`downloadUrlExpiresAt` / `thumbnailUrlExpiresAt`); they are re-signed automatically when within an hour of expiry, so re-fetching always returns a valid URL. Single-resource GETs auto-rehydrate this way; list endpoints (`GET /v1/tools/executions`, `GET /v1/files`, `GET /v1/workflows/runs`) do not re-sign, so a listed URL may be expired (check `downloadUrlExpiresAt`). GET the individual resource or use the file endpoints (`GET /v1/files/{fileId}`, `POST /v1/files/{fileId}/hydrate`) to refresh. `exportFileId` lets you hydrate fresh URLs directly from the file later.
+- [Apply remix actions to a project](https://docs.videogen.io/rest-api-reference/projects/remix-project.md): Apply an ordered list of edits (background music, logo, captions, transitions, natural-language edits) to a project.
+- [List remix actions for a project](https://docs.videogen.io/rest-api-reference/projects/list-project-remix-actions.md): Every remix action applied to a project, most recent first, with status and progress.
+- [Create a timeline interchange](https://docs.videogen.io/rest-api-reference/projects/create-timeline-interchange.md): Convert a project into an editor interchange document (Final Cut Pro XML, Adobe Premiere Pro, or OpenTimelineIO). Returns an `interchangeJobId` to poll.
+- [Get timeline interchange job](https://docs.videogen.io/rest-api-reference/projects/get-timeline-interchange.md): Poll a timeline interchange job by `interchangeJobId` for status and the resulting interchange document.
+
+## Assistant
+
+- [Start an assistant chat](https://docs.videogen.io/rest-api-reference/assistant/start-assistant-chat.md): Start an asynchronous AI Assistant chat from a message; creates a project and returns `{ messageId, assistantId, projectId, projectUrl }`. Poll `messageId` for the pending reply.
+- [Get an assistant chat](https://docs.videogen.io/rest-api-reference/assistant/get-assistant.md): Retrieve an assistant chat by `assistantId`, including its messages, suggested actions, and current state.
+- [Send an assistant message](https://docs.videogen.io/rest-api-reference/assistant/send-assistant-message.md): Send a follow-up message to an existing assistant chat; returns a `messageId` to poll.
+- [Get an assistant message](https://docs.videogen.io/rest-api-reference/assistant/get-assistant-message.md): Poll an assistant message by `messageId` for status and the assistant's response.
+- [Act on an assistant action](https://docs.videogen.io/rest-api-reference/assistant/act-on-assistant-action.md): Apply a suggested action returned by the assistant (`actionId`) to the chat's project.
+
+## Tools
+
+- [Generate image](https://docs.videogen.io/rest-api-reference/tools/generate-image.md): Generate images from a text prompt, or transform an existing image.
+- [Generate video clip](https://docs.videogen.io/rest-api-reference/tools/generate-video-clip.md): Generate a single short standalone video clip (up to 30 seconds) from text, an image, or a video. VideoGen automatically routes each request to a suitable video generation model.
+- [Text to speech](https://docs.videogen.io/rest-api-reference/tools/text-to-speech.md): Synthesize speech audio from text using a TTS voice. Only voices with `supportsDirectToolExecution` set to true can be used.
+- [Generate sound effect](https://docs.videogen.io/rest-api-reference/tools/generate-sound-effect.md): Generate a sound-effect audio clip from a text prompt.
+- [Generate music](https://docs.videogen.io/rest-api-reference/tools/generate-music.md): Generate an instrumental music track from a text prompt describing genre, mood, instrumentation, and tempo.
+- [Generate motion graphic](https://docs.videogen.io/rest-api-reference/tools/generate-motion-graphic.md): Generate an animated motion graphic video from a text prompt (experimental, agentic). Best for precise text animations like typing effects and kinetic typography.
+- [Generate avatar](https://docs.videogen.io/rest-api-reference/tools/generate-avatar.md): Render an ACTOR entity (`actorEntityId`) speaking an uploaded audio file. Optionally select `avatarQuality` (`LOW`, `STANDARD`, `HIGH`, or `MAX`). The request requires `audioFileId` plus exactly one avatar source.
+- [Vectorize image](https://docs.videogen.io/rest-api-reference/tools/vectorize-image.md): Convert a raster image into vector (SVG) output.
+- [Remove image background](https://docs.videogen.io/rest-api-reference/tools/remove-image-background.md): Produce a transparent-background version of an image.
+- [Remove video background](https://docs.videogen.io/rest-api-reference/tools/remove-video-background.md): Produce a transparent-background version of a video.
+- [Upscale an image](https://docs.videogen.io/rest-api-reference/tools/upscale-image.md): Increase the resolution of an existing image.
+- [Upscale a video](https://docs.videogen.io/rest-api-reference/tools/upscale-video.md): Increase the resolution of an existing video.
+- [Add 3D motion to an image](https://docs.videogen.io/rest-api-reference/tools/image-3-d-effect.md): Turn a still image into a short video clip with a 3D parallax motion effect.
+- [List tool executions](https://docs.videogen.io/rest-api-reference/tools/list-tool-executions.md): List tool executions, newest first. Cursor-paginated; see [Pagination](https://docs.videogen.io/pagination.md). Listed signed URLs are not re-signed, so GET the individual execution to refresh an expired URL.
+- [Get tool execution info](https://docs.videogen.io/rest-api-reference/tools/get-tool-execution-info.md): Poll a tool execution by `toolExecutionId` for status and result. Each succeeded result carries convenience `downloadUrl`/`thumbnailUrl` (with `*ExpiresAt`) at the top level alongside the full hydrated `file`. Signed URLs are valid for 7 days and this single-execution GET re-signs them automatically when within an hour of expiry, so re-fetching always returns a valid URL (the list endpoint does not re-sign). Executions remain retrievable indefinitely, including those older than 7 days.
+- [Cancel tool execution](https://docs.videogen.io/rest-api-reference/tools/cancel-tool-execution.md): Request cancellation of an in-flight tool execution.
+
+## Text
+
+- [Generate text](https://docs.videogen.io/rest-api-reference/text/generate-text.md): Generate text from a prompt using a general-purpose language model. Synchronous; useful for drafting scripts and other short copy before generating a video.
+
+## Files
+
+- [List files](https://docs.videogen.io/rest-api-reference/files/get-files.md): All files visible to the current API key. Cursor-paginated; see [Pagination](https://docs.videogen.io/pagination.md).
+- [Get file](https://docs.videogen.io/rest-api-reference/files/get-file.md): Metadata for one file by opaque `fileId`.
+- [Create file upload](https://docs.videogen.io/rest-api-reference/files/create-file-upload.md): Create a pending file and get a presigned upload URL. PUT file bytes to the URL to complete the upload.
+- [Hydrate file](https://docs.videogen.io/rest-api-reference/files/hydrate-file.md): Generate fresh signed URLs for thumbnails, previews, and downloads. Call when source URLs are missing or expired.
+- [Enable public preview](https://docs.videogen.io/rest-api-reference/files/enable-public-preview.md): Enable public preview for a file. Creates a public playback ID so the file can be streamed without authentication.
+- [Disable public preview](https://docs.videogen.io/rest-api-reference/files/disable-public-preview.md): Disable public preview for a file. Removes the public playback ID.
+- [Search files](https://docs.videogen.io/rest-api-reference/files/search-files.md): Semantic vector search over your files. Returns the closest matching files ranked by cosine similarity.
+- [Archive file](https://docs.videogen.io/rest-api-reference/files/archive-file.md): Archive a file by setting its archived timestamp. Archived files are excluded from list results.
+
+## Entities
+
+- [List entities](https://docs.videogen.io/rest-api-reference/entities/list-entities.md): List built-in catalog entities plus team actors, products, visual styles, and slideshow themes. Built-in rows have `isBuiltIn: true`. Cursor-paginated; see [Pagination](https://docs.videogen.io/pagination.md).
+- [Create entity](https://docs.videogen.io/rest-api-reference/entities/create-entity.md): Create a reusable actor, product, visual style, or slideshow theme entity.
+- [Get entity](https://docs.videogen.io/rest-api-reference/entities/get-entity.md): Metadata for one entity by `entityId`, including built-in catalog entities.
+- [Update entity](https://docs.videogen.io/rest-api-reference/entities/update-entity.md): Update an entity's name or description. Built-in entities cannot be updated.
+- [Archive entity](https://docs.videogen.io/rest-api-reference/entities/archive-entity.md): Archive an entity so it is excluded from list results. Built-in entities cannot be archived.
+- [Add entity reference](https://docs.videogen.io/rest-api-reference/entities/add-entity-reference.md): Add a reference asset (e.g. an image) to an entity. Built-in entities cannot have references added.
+- [Remove entity reference](https://docs.videogen.io/rest-api-reference/entities/remove-entity-reference.md): Remove a reference asset from an entity. Built-in entities cannot have references removed.
+
+## Resources
+
+- [List TTS voices](https://docs.videogen.io/rest-api-reference/resources/list-tts-voices.md): Catalogue of `voiceId` values for text-to-speech, with display name, language, gender, and capability flags (`supportsDirectToolExecution`, `supportsAllLanguages`, `isDeprecated`). Cursor-paginated.
+- [List supported languages](https://docs.videogen.io/rest-api-reference/resources/list-languages.md): Catalogue of supported language codes for narration, translation, and localization.
+
+## Account
+
+- [Get current account](https://docs.videogen.io/rest-api-reference/account/get-me.md): Return the account and team behind the API key (`apiKeyId`, `apiKeyNickname`, `email`, `displayName`, `teamId`). Takes no parameters. Use it as a connection test to confirm a key is valid.
+
+## Webhook events
+
+- [Webhook events (site)](https://docs.videogen.io/webhook-events): Webhook event categories and registration overview.
+- [Webhook events overview](https://docs.videogen.io/webhook-events.md): Event categories (tool execution, workflow run, project export, file upload, assistant message), delivery format, signature verification, and registration.
+
+### Tool execution events
+
+- [tool_execution.succeeded](https://docs.videogen.io/webhook-events/webhook-events/tool-execution-succeeded.md): Delivered when a tool execution completes successfully. Payload includes the executed tool's full result.
+- [tool_execution.failed](https://docs.videogen.io/webhook-events/webhook-events/tool-execution-failed.md): Delivered when a tool execution finishes in a failed terminal state. Payload includes a machine-readable error code and message.
+- [tool_execution.cancelled](https://docs.videogen.io/webhook-events/webhook-events/tool-execution-cancelled.md): Delivered when a tool execution is cancelled (via `POST /v1/tools/executions/{toolExecutionId}/cancel`).
+
+### Workflow run events
+
+- [workflow_run.succeeded](https://docs.videogen.io/webhook-events/webhook-events/workflow-run-succeeded.md): Delivered when a workflow run completes successfully. Payload includes `workflowRunId`, `workflowType`, `projectId`, and optional `projectUrl` (app editor link).
+- [workflow_run.failed](https://docs.videogen.io/webhook-events/webhook-events/workflow-run-failed.md): Delivered when a workflow run finishes in a failed terminal state. Payload includes `workflowRunId`, `workflowType`, `projectId`, and an error message.
+- [workflow_run.cancelled](https://docs.videogen.io/webhook-events/webhook-events/workflow-run-cancelled.md): Delivered when a workflow run is cancelled (via `POST /v1/workflows/runs/{workflowRunId}/cancel`).
+
+### Project export events
+
+- [project_export.succeeded](https://docs.videogen.io/webhook-events/webhook-events/project-export-succeeded.md): Delivered when a project export started via `POST /v1/projects/{projectId}/export` completes successfully. Payload includes `exportId`, `projectId`, and `exportFileId`.
+- [project_export.failed](https://docs.videogen.io/webhook-events/webhook-events/project-export-failed.md): Delivered when a project export started via the API fails. Payload includes `exportId`, `projectId`, and an error message.
+- [project_export.cancelled](https://docs.videogen.io/webhook-events/webhook-events/project-export-cancelled.md): Delivered when a project export started via the API is cancelled.
+
+### File events
+
+- [file.upload.completed](https://docs.videogen.io/webhook-events/webhook-events/file-upload-completed.md): Delivered when a file upload finishes and the file is stored. Only fired for files uploaded via the API.
+- [file.upload.failed](https://docs.videogen.io/webhook-events/webhook-events/file-upload-failed.md): Delivered when an API file upload fails.
+- [file.playback_ready](https://docs.videogen.io/webhook-events/webhook-events/file-playback-ready.md): Delivered when HLS streaming becomes available for a file (private `hlsSource`, plus public playback if enabled).
+- [file.download_ready](https://docs.videogen.io/webhook-events/webhook-events/file-download-ready.md): Delivered when at least one static-rendition download URL is ready for a file.
+- [file.analysis_completed](https://docs.videogen.io/webhook-events/webhook-events/file-analysis-completed.md): Delivered when description, transcript, and vector embedding are ready (the file is now searchable). Never fires for `scope: "TEMPORARY"` files.
+- [file.analysis_failed](https://docs.videogen.io/webhook-events/webhook-events/file-analysis-failed.md): Delivered when file analysis fails. Never fires for `scope: "TEMPORARY"` files.
+
+### Assistant message events
+
+- [assistant_message.succeeded](https://docs.videogen.io/webhook-events/webhook-events/assistant-message-succeeded.md): Delivered when an assistant message completes successfully. Payload includes the assistant's reply and any suggested actions.
+- [assistant_message.failed](https://docs.videogen.io/webhook-events/webhook-events/assistant-message-failed.md): Delivered when an assistant message finishes in a failed terminal state.
+- [assistant_message.cancelled](https://docs.videogen.io/webhook-events/webhook-events/assistant-message-cancelled.md): Delivered when an assistant message is cancelled.
+
+## Webhooks (REST)
+
+- [List webhooks](https://docs.videogen.io/rest-api-reference/webhooks/list-webhook-endpoints.md): All webhook endpoints registered to the current API key. Cursor-paginated.
+- [Create webhook](https://docs.videogen.io/rest-api-reference/webhooks/create-webhook-endpoint.md): Subscribe an HTTPS URL to `tool_execution.*`, `workflow_run.*`, `project_export.*`, `file.*`, and `assistant_message.*` events; the response is the only place `signingSecret` is returned.
+- [Delete webhook](https://docs.videogen.io/rest-api-reference/webhooks/delete-webhook-endpoint.md): Unsubscribe an endpoint by id.
+
+### Event types
+
+Tool execution events: `tool_execution.succeeded`, `tool_execution.failed`, `tool_execution.cancelled`.
+
+Workflow run events: `workflow_run.succeeded`, `workflow_run.failed`, `workflow_run.cancelled`. Payload includes `workflowRunId`, `workflowType`, `projectId`, and optional `projectUrl` (deep link to open the project in the VideoGen editor; not needed for API-only integrations; team and collaborators only).
+
+Project export events (API exports only): `project_export.succeeded`, `project_export.failed`, `project_export.cancelled`. Payload includes `exportId`, `projectId`, `occurredAt`, and `exportFileId` (`null` until succeeded). Use `GET /v1/projects/{projectId}/exports/{exportId}` for signed download URLs.
+
+File upload events (API uploads only): `file.upload.completed`, `file.upload.failed`, `file.playback_ready`, `file.download_ready`, `file.analysis_completed`, `file.analysis_failed`. Each payload includes a hydrated `FileInfo` object. `file.playback_ready` fires when HLS streaming (both private `hlsSource` and public if enabled) is available. `file.download_ready` fires when at least one static rendition download URL is ready. `file.analysis_completed` fires when description, transcript, and vector embedding are ready (the file is now included in search results). Temporary files (`scope: "TEMPORARY"`) are never analyzed, so `file.analysis_completed` and `file.analysis_failed` will never fire for them.
+
+Assistant message events: `assistant_message.succeeded`, `assistant_message.failed`, `assistant_message.cancelled`. Delivered as an assistant message (from `startAssistantChat` or `sendAssistantMessage`) reaches a terminal state.
+
+## Changelog
+
+- [Changelog](https://docs.videogen.io/changelog): Recent API updates, new features, and breaking changes (HTML).
+- [Changelog (markdown)](https://docs.videogen.io/changelog.md): Same changelog for agents that fetch `.md` URLs.
+- [2026-04-12](https://docs.videogen.io/changelog/2026/4/12.md): Changelog entry for 2026-04-12.
+- [2026-04-22](https://docs.videogen.io/changelog/2026/4/22.md): Changelog entry for 2026-04-22.
+- [2026-04-23](https://docs.videogen.io/changelog/2026/4/23.md): Changelog entry for 2026-04-23.
+- [2026-04-26](https://docs.videogen.io/changelog/2026/4/26.md): Changelog entry for 2026-04-26.
+- [2026-04-27](https://docs.videogen.io/changelog/2026/4/27.md): Changelog entry for 2026-04-27.
+- [2026-04-28](https://docs.videogen.io/changelog/2026/4/28.md): Changelog entry for 2026-04-28.
+- [2026-05-05](https://docs.videogen.io/changelog/2026/5/5.md): Changelog entry for 2026-05-05.
+- [2026-05-26](https://docs.videogen.io/changelog/2026/5/26.md): Changelog entry for 2026-05-26.
+- [2026-05-27](https://docs.videogen.io/changelog/2026/5/27.md): Changelog entry for 2026-05-27.
+- [2026-06-19](https://docs.videogen.io/changelog/2026/6/19.md): Changelog entry for 2026-06-19.
+- [2026-06-29](https://docs.videogen.io/changelog/2026/6/29.md): Changelog entry for 2026-06-29.
+- [2026-07-03](https://docs.videogen.io/changelog/2026/7/3.md): Changelog entry for 2026-07-03.
+- [2026-07-08](https://docs.videogen.io/changelog/2026/7/8.md): Changelog entry for 2026-07-08.
+- [2026-07-22](https://docs.videogen.io/changelog/2026/7/22.md): Changelog entry for 2026-07-22.
+- [2026-07-23](https://docs.videogen.io/changelog/2026/7/23.md): Changelog entry for 2026-07-23.
+- [2026-07-25](https://docs.videogen.io/changelog/2026/7/25.md): Changelog entry for 2026-07-25.
+- [2026-07-30](https://docs.videogen.io/changelog/2026/7/30.md): Changelog entry for 2026-07-30.
+- [2026-07-31](https://docs.videogen.io/changelog/2026/7/31.md): Changelog entry for 2026-07-31.
+- [2026-08-05](https://docs.videogen.io/changelog/2026/8/5.md): Changelog entry for 2026-08-05.
+- [2026-08-07](https://docs.videogen.io/changelog/2026/8/7.md): Changelog entry for 2026-08-07.
+- [2026-08-10](https://docs.videogen.io/changelog/2026/8/10.md): Changelog entry for 2026-08-10.
+- [2026-08-11](https://docs.videogen.io/changelog/2026/8/11.md): Changelog entry for 2026-08-11.
+- [2026-08-13](https://docs.videogen.io/changelog/2026/8/13.md): Changelog entry for 2026-08-13.
+- [2026-08-14](https://docs.videogen.io/changelog/2026/8/14.md): Changelog entry for 2026-08-14.
+- [2026-08-17](https://docs.videogen.io/changelog/2026/8/17.md): Changelog entry for 2026-08-17.
+- [2026-08-18](https://docs.videogen.io/changelog/2026/8/18.md): Changelog entry for 2026-08-18.
+- [2026-08-19](https://docs.videogen.io/changelog/2026/8/19.md): Changelog entry for 2026-08-19.
+
+## Optional
+
+- Full documentation bundle (all pages, including API reference with SDK examples): fetch `/llms-full.txt` on this host.

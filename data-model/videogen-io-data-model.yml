@@ -1,0 +1,683 @@
+generated: '2026-10-02'
+method: derived
+generator: derive-data-model.py
+source:
+- openapi/videogen-io-openapi.json
+notation: has_one = property $ref; has_many = array of $ref; belongs_to = <entity>_id field
+summary:
+  entities: 111
+  entities_in_spec: 111
+  relationships: 88
+entities:
+- name: ActOnAssistantActionRequest
+  fields: 1
+- name: ActOnAssistantActionResponse
+  fields: 1
+  description: Returned when a `POST /v1/assistants/{assistantId}/actions/{actionId}` call is accepted. Use `messageId`
+    to poll the resulting assistant message.
+- name: AddEntityReferenceRequest
+  fields: 3
+- name: ApiError
+  fields: 4
+  description: 'Standard error body returned with every non-2xx response (the `default` response of every operation).
+    The HTTP status code conveys the error class; this body carries the details:'
+- name: AspectRatio
+  fields: 2
+  description: Aspect ratio as a width:height pair (e.g. 16 and 9 for 16:9). Not pixel dimensions.
+- name: AssistantAction
+  fields: 5
+  description: An actionable widget the assistant offered on this turn. Act on it with `POST /v1/assistants/{assistantId}/actions/{actionId}`
+    unless `requiresApp` is true.
+- name: AssistantActionDetail
+  fields: 3
+  description: Extra data for rendering this action inline (in a chat surface or integration) without opening the
+    web app. Fields are populated only when relevant to the action's kind; all are optional.
+- name: AssistantInputMessage
+  fields: 6
+  description: A user-authored message in an assistant chat.
+- name: AssistantMessageAttachment
+  fields: 2
+  description: A file linked to an assistant chat message.
+- name: AssistantMessageWebhookPayload
+  fields: 4
+  description: Body POSTed to a registered webhook endpoint when an assistant message reaches a terminal state.
+    Mirrors the `AssistantMessage` GET response.
+- name: AssistantOutputMessage
+  fields: 10
+  description: An assistant-authored message in an assistant chat, including any suggestions or actions it offered.
+- name: AssistantWorkflowSuggestion
+  fields: 4
+  description: A starting-point workflow the assistant suggests for the conversation. Act on it with `POST /v1/assistants/{assistantId}/actions/{actionId}`
+    to select the workflow and continue.
+- name: ContentPolicyConfig
+  fields: 1
+  description: Controls how content-policy rejections are handled during generation.
+- name: CreateEntityRequest
+  fields: 3
+- name: CreateFileUploadRequest
+  fields: 5
+- name: CreateTimelineInterchangeRequest
+  fields: 2
+- name: CreateTimelineInterchangeResponse
+  fields: 1
+- name: CreateWebhookEndpointRequest
+  fields: 3
+- name: Entity
+  fields: 9
+  description: A reusable actor, product, visual style, or slideshow theme. Attach its reference images to workflows
+    for consistent characters, looks, and slide designs.
+- name: EntityActorConfig
+  fields: 3
+  description: Read-only voice and avatar summary for an ACTOR entity. Always null for non-ACTOR entities.
+- name: EntityArchiveResponse
+  fields: 2
+- name: EntityReference
+  fields: 3
+  description: A file attached to an entity as a reference image.
+- name: ErrorRequirement
+  fields: 2
+  description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g.
+    purchasing an add-on or upgrading the plan).
+- name: ExecutedTool
+  fields: 7
+- name: ExportDeliveryDestination
+  fields: 4
+- name: ExportProjectRequest
+  fields: 4
+- name: ExportProjectResponse
+  fields: 1
+- name: FileAnalysisMetadata
+  fields: 3
+  description: Background analysis state for a file. Background analysis populates `description`, `transcript`,
+    `durationSeconds`, and the search embedding after a file is uploaded or generated; this object lets you
+- name: FileInfo
+  fields: 23
+  description: Metadata for a generated file. Obtain ids from tool results or `GET /v1/files`.
+- name: FileSource
+  fields: 6
+  description: A rendition source for a file (e.g. thumbnail, preview, download). Contains a signed URL and metadata.
+- name: FileUploadResponse
+  fields: 2
+- name: FileWebhookPayload
+  fields: 5
+  description: Delivered to your webhook endpoint during the file lifecycle (upload, analysis, playback, and download
+    readiness). Only sent for files uploaded via the API. The payload always includes a hydrated `fil
+- name: GenerateAvatarRequest
+  fields: 7
+  description: Generate a talking-head avatar from an ACTOR entity and audio.
+- name: GenerateImageRequest
+  fields: 10
+- name: GenerateMotionGraphicRequest
+  fields: 10
+- name: GenerateMusicRequest
+  fields: 4
+- name: GenerateSoundEffectRequest
+  fields: 6
+- name: GenerateStoryboardScene
+  fields: 8
+  description: A single scene in the storyboard. Becomes one section in the final video.
+- name: GenerateTextRequest
+  fields: 5
+- name: GenerateTextResponse
+  fields: 1
+- name: GenerateVideoClipRequest
+  fields: 17
+  description: At least one of `prompt`, `startFrameFileId`, `imageFileIds`, `videoFileIds`, `audioFileIds`, or
+    `spokenDialogue` must be provided.
+- name: GetAssistantResponse
+  fields: 4
+  description: An assistant chat and every message it currently contains.
+- name: GetFilesResponse
+  fields: 3
+- name: ImageAssetRequest
+  fields: 5
+- name: Language
+  fields: 2
+  description: A language a project can be translated into.
+- name: LanguageListResponse
+  fields: 1
+- name: ListEntitiesResponse
+  fields: 3
+- name: ListProjectExportsResponse
+  fields: 3
+- name: ListProjectsResponse
+  fields: 3
+  description: Paginated list of projects, most recently updated first. By default only API-created projects are
+    included; pass `includeUiProjects=true` on the request to also include dashboard-created projects.
+- name: ListRemixActionsResponse
+  fields: 3
+- name: MeResponse
+  fields: 5
+- name: MotionGraphicSubToolModes
+  fields: 4
+  description: Per-capability access modes for a motion graphic. Any omitted capability defaults to AUTO.
+- name: ProjectExport
+  fields: 12
+- name: ProjectExportWebhookPayload
+  fields: 6
+  description: Body POSTed to a registered webhook endpoint when a project export started via the API reaches a
+    terminal state. Use `exportId` with `GET /v1/projects/{projectId}/exports/{exportId}` for signed downlo
+- name: ProjectResponse
+  fields: 8
+  description: Simplified project metadata.
+- name: PromptToVideoClipRequest
+  fields: 9
+  description: Creates a project from a text prompt and generates one short AI video clip. VideoGen generates an
+    opening frame from the prompt (optionally guided by reference images), then animates that frame into a
+- name: PronunciationReplacement
+  fields: 2
+- name: RemixActionAddTransitions
+  fields: 3
+  description: 'Stamp transitions across the project. Not per-boundary: each field you set is applied uniformly
+    to every boundary in that scope, replacing any transition already there. Set the transition between sect'
+- name: RemixActionAddZoom
+  fields: 1
+  description: Apply a Ken Burns zoom to every eligible still image in the project, including uploaded images. Replaces
+    any existing still-image effect on those assets. If the project has no eligible stills, the act
+- name: RemixActionChangeNarrator
+  fields: 5
+  description: 'Re-narrate every AI-voiceover asset in the project with a new voice and optional actor avatar, replacing
+    each narration in place. Runs asynchronously: text-to-speech is re-fired per asset with the ori'
+- name: RemixActionCleanUpTranscript
+  fields: 5
+  description: Tighten every transcript in the project by removing silent pauses and/or filler words. Useful for
+    polishing narration captured from raw recordings.
+- name: RemixActionConvertImagesToVideos
+  fields: 4
+  description: Animate every eligible still image in the project into a short AI video clip (image-to-video), replacing
+    each image in place. Eligible images are non-SVG image assets backed by an uploaded or stock fi
+- name: RemixActionDisableCaptions
+  fields: 1
+  description: Hide captions on every captionable section.
+- name: RemixActionEnableCaptions
+  fields: 2
+  description: Show captions on every captionable section. Optionally override the project caption style.
+- name: RemixActionGenerateMusic
+  fields: 2
+  description: Generate a background music track from a text prompt and set it as the project's background music,
+    replacing any existing track. Runs asynchronously.
+- name: RemixActionRegenerateImages
+  fields: 3
+  description: 'Restyle every eligible still image in the project to a new look (image-to-image), replacing each
+    image in place. Eligible images are non-SVG image assets backed by an uploaded or generated file. Runs '
+- name: RemixActionResizeProject
+  fields: 2
+  description: Change the project's output aspect ratio (e.g. to a vertical 9:16 social format). The video is re-flowed
+    to the new ratio.
+- name: RemixActionRun
+  fields: 8
+- name: RemixActionSetBackgroundMusic
+  fields: 3
+  description: Set, replace, or remove the project's background music track.
+- name: RemixActionSetLogo
+  fields: 4
+  description: Set, replace, or remove the logo overlay.
+- name: RemixActionShuffleStockVisuals
+  fields: 1
+  description: 'Replace every stock (library) visual in the project with a fresh alternative from the same search,
+    replacing each in place. Runs asynchronously: each stock asset''s original search is re-run, excluding'
+- name: RemixActionTranslateProject
+  fields: 4
+  description: 'Translate the whole project into another language: every piece of text (title, section names, on-screen
+    text overlays, transcripts, and narration scripts) is translated, and — unless disabled — each A'
+- name: RemixActionUpscaleAssets
+  fields: 3
+  description: 'Sharpen every eligible asset in the project up to 4K, replacing each in place. Runs asynchronously:
+    one upscaled asset is generated per eligible asset. If the project has no eligible assets, the actio'
+- name: RemixProjectRequest
+  fields: 2
+- name: RemixProjectResponse
+  fields: 3
+  description: Returned when remix actions are accepted. Poll `GET /v1/projects/{projectId}/remix-actions` for status.
+- name: RemoveEntityReferenceRequest
+  fields: 1
+- name: SceneDescriptionRange
+  fields: 3
+  description: A description of the visuals to show during an absolute time range of the finished video.
+- name: SceneGeneration
+  fields: 2
+  description: Optional look for a storyboard scene. Full builds always produce a video clip per scene (stills are
+    intermediate first frames).
+- name: ScriptToVideoRequest
+  fields: 18
+- name: SearchFilesRequest
+  fields: 3
+- name: SearchFilesResponse
+  fields: 1
+- name: SearchFilesResult
+  fields: 2
+- name: SendAssistantMessageRequest
+  fields: 1
+- name: SendAssistantMessageResponse
+  fields: 1
+  description: Returned when a `POST /v1/assistants/{assistantId}/messages` call is accepted. Use `messageId` to
+    poll the pending assistant reply.
+- name: SlideshowToVideoRequest
+  fields: 16
+- name: StartAssistantChatRequest
+  fields: 2
+- name: StartAssistantChatResponse
+  fields: 4
+  description: Returned when a `POST /v1/assistants` call is accepted. Poll `messageId` for the pending assistant
+    reply; keep `assistantId` / `projectId` to continue the chat and address the project.
+- name: StartToolExecutionResponse
+  fields: 1
+  description: Returned when a tool execution is started. Use `toolExecutionId` to poll for results or cancel.
+- name: StartWorkflowRunResponse
+  fields: 4
+  description: 'Returned when a workflow run is accepted. Poll `GET /v1/workflows/runs/{workflowRunId}` or subscribe
+    to webhooks for completion. When the start request set `autoExport: true`, wait until `status` is `'
+- name: StoryboardToVideoRequest
+  fields: 13
+- name: TextToSpeechRequest
+  fields: 9
+- name: TimelineInterchange
+  fields: 12
+- name: ToolExecutionListResponse
+  fields: 3
+  description: Paginated list of API-started tool executions, most recently created first.
+- name: ToolExecutionWebhookPayload
+  fields: 6
+  description: Delivered to your webhook endpoint when a tool execution reaches a terminal state. The shape mirrors
+    the `ExecutedTool` response with the addition of `event` and `occurredAt`.
+- name: ToolSuccessResult
+  fields: 7
+  description: Result for a single generated file. Only appears inside a succeeded execution's `results`, so every
+    field below is always present.
+- name: Transcript
+  fields: 2
+  description: A transcript of an audio file, as timed words in order.
+- name: TranscriptWord
+  fields: 3
+  description: A single timed word of a transcript.
+- name: TtsVoice
+  fields: 9
+  description: A text-to-speech voice.
+- name: TtsVoiceListResponse
+  fields: 3
+- name: UpdateEntityRequest
+  fields: 2
+  description: At least one field must be provided.
+- name: VideoAssetRequest
+  fields: 5
+- name: VoiceoverToVideoRequest
+  fields: 17
+- name: WebhookEndpoint
+  fields: 7
+- name: WebhookEndpointListResponse
+  fields: 3
+- name: WorkflowCaptionBackgroundStyle
+  fields: 4
+  description: Background drawn behind caption text.
+- name: WorkflowCaptionStyle
+  fields: 12
+  description: Caption styling. Any omitted field falls back to the VideoGen default caption style. Provide an empty
+    object (`{}`) to keep the default style but ensure captions are shown. Pass `null` for the whole `
+- name: WorkflowRgbColor
+  fields: 3
+  description: An RGB color. Each channel is an integer from 0 to 255.
+- name: WorkflowRun
+  fields: 14
+- name: WorkflowRunListResponse
+  fields: 3
+  description: Paginated list of API-started workflow runs, most recently created first.
+- name: WorkflowRunWebhookPayload
+  fields: 13
+  description: 'Body POSTed to a registered webhook endpoint when a workflow run reaches a terminal state. When
+    the run was started with `autoExport: true`, `workflow_run.succeeded` includes `downloadUrl`.'
+- name: WorkflowVisualStyle
+  fields: 4
+  description: Visual style for the generated b-roll.
+relationships:
+- from: FileInfo
+  to: Transcript
+  type: has_one
+  via: transcript
+- from: FileInfo
+  to: FileSource
+  type: has_one
+  via: thumbnailSource
+- from: FileInfo
+  to: FileSource
+  type: has_one
+  via: previewSource
+- from: FileInfo
+  to: FileSource
+  type: has_one
+  via: downloadSource
+- from: FileInfo
+  to: FileSource
+  type: has_one
+  via: hlsSource
+- from: FileInfo
+  to: FileSource
+  type: has_one
+  via: staticPublicPreviewSource
+- from: FileInfo
+  to: FileAnalysisMetadata
+  type: has_one
+  via: fileAnalysisMetadata
+- from: SearchFilesResponse
+  to: SearchFilesResult
+  type: has_many
+  via: results
+- from: SearchFilesResult
+  to: FileInfo
+  type: has_one
+  via: file
+- from: CreateFileUploadRequest
+  to: Transcript
+  type: has_one
+  via: transcript
+- from: GetFilesResponse
+  to: FileInfo
+  type: has_many
+  via: files
+- from: Entity
+  to: EntityActorConfig
+  type: has_one
+  via: actorConfig
+- from: Entity
+  to: EntityReference
+  type: has_many
+  via: references
+- from: ListEntitiesResponse
+  to: Entity
+  type: has_many
+  via: entities
+- from: EntityArchiveResponse
+  to: Entity
+  type: belongs_to
+  via: entityId
+- from: TtsVoiceListResponse
+  to: TtsVoice
+  type: has_many
+  via: ttsVoices
+- from: LanguageListResponse
+  to: Language
+  type: has_many
+  via: languages
+- from: AssistantAction
+  to: AssistantActionDetail
+  type: has_one
+  via: detail
+- from: AssistantInputMessage
+  to: AssistantMessageAttachment
+  type: has_many
+  via: attachments
+- from: AssistantOutputMessage
+  to: AssistantMessageAttachment
+  type: has_many
+  via: attachments
+- from: AssistantOutputMessage
+  to: AssistantWorkflowSuggestion
+  type: has_many
+  via: workflowSuggestions
+- from: AssistantOutputMessage
+  to: AssistantAction
+  type: has_many
+  via: actions
+- from: AssistantOutputMessage
+  to: StartWorkflowRunResponse
+  type: has_one
+  via: generation
+- from: AssistantOutputMessage
+  to: ApiError
+  type: has_one
+  via: error
+- from: GenerateImageRequest
+  to: Entity
+  type: belongs_to
+  via: entityIds
+- from: GenerateImageRequest
+  to: AspectRatio
+  type: has_one
+  via: aspectRatio
+- from: GenerateImageRequest
+  to: ContentPolicyConfig
+  type: has_one
+  via: contentPolicyConfig
+- from: GenerateVideoClipRequest
+  to: AspectRatio
+  type: has_one
+  via: aspectRatio
+- from: GenerateVideoClipRequest
+  to: ContentPolicyConfig
+  type: has_one
+  via: contentPolicyConfig
+- from: GenerateMotionGraphicRequest
+  to: Entity
+  type: belongs_to
+  via: entityIds
+- from: GenerateMotionGraphicRequest
+  to: AspectRatio
+  type: has_one
+  via: aspectRatio
+- from: GenerateMotionGraphicRequest
+  to: MotionGraphicSubToolModes
+  type: has_one
+  via: subToolModes
+- from: TextToSpeechRequest
+  to: PronunciationReplacement
+  type: has_many
+  via: pronunciationReplacements
+- from: ToolSuccessResult
+  to: FileInfo
+  type: has_one
+  via: file
+- from: ApiError
+  to: ErrorRequirement
+  type: has_one
+  via: requirement
+- from: ExecutedTool
+  to: ToolSuccessResult
+  type: has_many
+  via: results
+- from: ExecutedTool
+  to: ApiError
+  type: has_one
+  via: error
+- from: ToolExecutionListResponse
+  to: ExecutedTool
+  type: has_many
+  via: toolExecutions
+- from: WorkflowVisualStyle
+  to: Entity
+  type: belongs_to
+  via: entityId
+- from: WorkflowCaptionBackgroundStyle
+  to: WorkflowRgbColor
+  type: has_one
+  via: backgroundColor
+- from: WorkflowCaptionStyle
+  to: WorkflowRgbColor
+  type: has_one
+  via: textColor
+- from: WorkflowCaptionStyle
+  to: WorkflowRgbColor
+  type: has_one
+  via: strokeColor
+- from: WorkflowCaptionStyle
+  to: WorkflowCaptionBackgroundStyle
+  type: has_one
+  via: backgroundStyle
+- from: WorkflowCaptionStyle
+  to: WorkflowRgbColor
+  type: has_one
+  via: spokenTextColor
+- from: WorkflowCaptionStyle
+  to: WorkflowRgbColor
+  type: has_one
+  via: spokenTextStrokeColor
+- from: RemixActionEnableCaptions
+  to: WorkflowCaptionStyle
+  type: has_one
+  via: captionStyle
+- from: RemixActionResizeProject
+  to: AspectRatio
+  type: has_one
+  via: aspectRatio
+- from: RemixActionRun
+  to: ApiError
+  type: has_one
+  via: error
+- from: ListRemixActionsResponse
+  to: RemixActionRun
+  type: has_many
+  via: remixActions
+- from: ScriptToVideoRequest
+  to: AspectRatio
+  type: has_one
+  via: aspectRatio
+- from: ScriptToVideoRequest
+  to: WorkflowVisualStyle
+  type: has_one
+  via: visualStyle
+- from: ScriptToVideoRequest
+  to: SceneDescriptionRange
+  type: has_many
+  via: scenes
+- from: ScriptToVideoRequest
+  to: ExportProjectRequest
+  type: has_one
+  via: exportOptions
+- from: Transcript
+  to: TranscriptWord
+  type: has_many
+  via: words
+- from: VoiceoverToVideoRequest
+  to: SceneDescriptionRange
+  type: has_many
+  via: scenes
+- from: VoiceoverToVideoRequest
+  to: AspectRatio
+  type: has_one
+  via: aspectRatio
+- from: VoiceoverToVideoRequest
+  to: WorkflowVisualStyle
+  type: has_one
+  via: visualStyle
+- from: VoiceoverToVideoRequest
+  to: WorkflowCaptionStyle
+  type: has_one
+  via: captionStyle
+- from: VoiceoverToVideoRequest
+  to: ExportProjectRequest
+  type: has_one
+  via: exportOptions
+- from: SlideshowToVideoRequest
+  to: AspectRatio
+  type: has_one
+  via: aspectRatio
+- from: SlideshowToVideoRequest
+  to: WorkflowCaptionStyle
+  type: has_one
+  via: captionStyle
+- from: SlideshowToVideoRequest
+  to: ExportProjectRequest
+  type: has_one
+  via: exportOptions
+- from: GenerateStoryboardScene
+  to: SceneGeneration
+  type: has_one
+  via: generation
+- from: StoryboardToVideoRequest
+  to: GenerateStoryboardScene
+  type: has_many
+  via: scenes
+- from: StoryboardToVideoRequest
+  to: SceneGeneration
+  type: has_one
+  via: defaultGeneration
+- from: StoryboardToVideoRequest
+  to: AspectRatio
+  type: has_one
+  via: aspectRatio
+- from: StoryboardToVideoRequest
+  to: ExportProjectRequest
+  type: has_one
+  via: exportOptions
+- from: PromptToVideoClipRequest
+  to: AspectRatio
+  type: has_one
+  via: aspectRatio
+- from: PromptToVideoClipRequest
+  to: ExportProjectRequest
+  type: has_one
+  via: exportOptions
+- from: StartWorkflowRunResponse
+  to: WorkflowRun
+  type: belongs_to
+  via: workflowRunId
+- from: WorkflowRun
+  to: ApiError
+  type: has_one
+  via: error
+- from: WorkflowRunListResponse
+  to: WorkflowRun
+  type: has_many
+  via: workflowRuns
+- from: WorkflowRunWebhookPayload
+  to: WorkflowRun
+  type: belongs_to
+  via: workflowRunId
+- from: WorkflowRunWebhookPayload
+  to: ApiError
+  type: has_one
+  via: error
+- from: ProjectExportWebhookPayload
+  to: ApiError
+  type: has_one
+  via: error
+- from: ProjectResponse
+  to: AspectRatio
+  type: has_one
+  via: aspectRatio
+- from: ListProjectsResponse
+  to: ProjectResponse
+  type: has_many
+  via: projects
+- from: ExportProjectRequest
+  to: ExportDeliveryDestination
+  type: has_many
+  via: deliveryDestinations
+- from: ProjectExport
+  to: FileInfo
+  type: has_one
+  via: file
+- from: ProjectExport
+  to: ApiError
+  type: has_one
+  via: error
+- from: ListProjectExportsResponse
+  to: ProjectExport
+  type: has_many
+  via: exports
+- from: TimelineInterchange
+  to: FileInfo
+  type: has_one
+  via: file
+- from: TimelineInterchange
+  to: ApiError
+  type: has_one
+  via: error
+- from: ToolExecutionWebhookPayload
+  to: ToolSuccessResult
+  type: has_many
+  via: results
+- from: ToolExecutionWebhookPayload
+  to: ApiError
+  type: has_one
+  via: error
+- from: FileWebhookPayload
+  to: FileInfo
+  type: has_one
+  via: file
+- from: FileWebhookPayload
+  to: ApiError
+  type: has_one
+  via: error
+- from: WebhookEndpointListResponse
+  to: WebhookEndpoint
+  type: has_many
+  via: endpoints

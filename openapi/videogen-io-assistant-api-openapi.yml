@@ -1,0 +1,549 @@
+openapi: 3.2.0
+info:
+  title: VideoGen Assistant API
+  version: 1.0.0
+  description: Programmatically generate images, videos, voiceovers, sound effects, and avatar clips.
+servers:
+- url: https://api.videogen.io
+  description: Production
+security:
+- bearerAuth: []
+tags:
+- name: Assistant
+  description: 'Converse with the VideoGen AI assistant inside a project. Start a chat, send messages, and act on the assistant''s suggestions (pick a workflow, approve a plan, generate). All calls are asynchronous: POSTing a message returns a `messageId` (e.g. `vg_mesg_...`); poll `GET /v1/assistant-messages/{messageId}` until `status` is `succeeded`, `failed`, or `cancelled`, or subscribe to `assistant_message.*` webhooks.'
+paths:
+  /v1/assistants:
+    post:
+      tags:
+      - Assistant
+      operationId: startAssistantChat
+      x-fern-audiences:
+      - rest
+      summary: Start an assistant chat
+      description: 'Creates a new project and sends the first message to the VideoGen AI assistant, exactly like typing into the assistant on a new project in the app. Asynchronous: the response contains the `messageId` of the assistant''s pending reply (e.g. `vg_mesg_...`). Poll `GET /v1/assistant-messages/{messageId}` until `status` is `succeeded`, `failed`, or `cancelled`, or subscribe to `assistant_message.*` webhooks. Fetch the parent assistant with `GET /v1/assistants/{assistantId}` to list all messages in the chat.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartAssistantChatRequest'
+      responses:
+        '202':
+          description: Assistant message accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartAssistantChatResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/assistants/{assistantId}:
+    get:
+      tags:
+      - Assistant
+      operationId: getAssistant
+      x-fern-audiences:
+      - rest
+      summary: Get an assistant chat
+      description: Returns the assistant chat identified by `assistantId`, including every message in it (user and assistant turns) in chronological order.
+      parameters:
+      - $ref: '#/components/parameters/AssistantIdPath'
+      responses:
+        '200':
+          description: The assistant chat and its messages.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAssistantResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/assistants/{assistantId}/messages:
+    post:
+      tags:
+      - Assistant
+      operationId: sendAssistantMessage
+      x-fern-audiences:
+      - rest
+      summary: Send an assistant message
+      description: 'Sends a follow-up message to an existing assistant chat started with `POST /v1/assistants`. Asynchronous: the response contains the `messageId` of the assistant''s pending reply. Poll `GET /v1/assistant-messages/{messageId}` until `status` is terminal, or subscribe to `assistant_message.*` webhooks.'
+      parameters:
+      - $ref: '#/components/parameters/AssistantIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendAssistantMessageRequest'
+      responses:
+        '202':
+          description: Assistant message accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendAssistantMessageResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/assistants/{assistantId}/actions/{actionId}:
+    post:
+      tags:
+      - Assistant
+      operationId: actOnAssistantAction
+      x-fern-audiences:
+      - rest
+      summary: Act on an assistant action
+      description: 'Acts on an actionable widget the assistant offered on a prior turn. Reference the action by its `actionId` from a prior assistant message. `APPROVE` (the default) completes the action; `REJECT` records the rejection. Two kinds are actionable via the API: accepting a workflow suggestion (`APPROVE` applies the suggested workflow and immediately starts generating; the returned assistant message carries the workflow run in `generation`), and applying an assistant edit (an `APPLY_EDIT` action with `requiresApp` false, which applies the edit to the project). Actions with `requiresApp` set to true (plans, tools, and other app-only widgets) can only be completed in the web app: open the assistant''s `projectUrl` instead. Asynchronous: the response contains the `messageId` of the resulting assistant message. Poll `GET /v1/assistant-messages/{messageId}` for its terminal state.'
+      parameters:
+      - $ref: '#/components/parameters/AssistantIdPath'
+      - name: actionId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The `actionId` of the action to act on, from a prior assistant message.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActOnAssistantActionRequest'
+      responses:
+        '202':
+          description: Assistant action accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActOnAssistantActionResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /v1/assistant-messages/{messageId}:
+    get:
+      tags:
+      - Assistant
+      operationId: getAssistantMessage
+      x-fern-audiences:
+      - rest
+      summary: Get an assistant message
+      description: Returns a single assistant chat message by id. Poll after a POST that returned `messageId` until `status` is `succeeded`, `failed`, or `cancelled`. Also supported for `USER` messages (which reach terminal state as soon as they're accepted).
+      parameters:
+      - $ref: '#/components/parameters/MessageIdPath'
+      responses:
+        '200':
+          description: The assistant chat message.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantMessage'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  schemas:
+    WorkflowType:
+      type: string
+      description: Workflow type identifier.
+      enum:
+      - SCRIPT_TO_VIDEO
+      - VOICEOVER_TO_VIDEO
+      - SLIDESHOW_TO_VIDEO
+      - STORYBOARD_TO_VIDEO
+      - PROMPT_TO_VIDEO_CLIP
+    SendAssistantMessageResponse:
+      type: object
+      description: Returned when a `POST /v1/assistants/{assistantId}/messages` call is accepted. Use `messageId` to poll the pending assistant reply.
+      required:
+      - messageId
+      properties:
+        messageId:
+          type: string
+          description: Opaque assistant message id for the pending assistant reply (e.g. `vg_mesg_...`). Poll `GET /v1/assistant-messages/{messageId}`.
+    GetAssistantResponse:
+      type: object
+      description: An assistant chat and every message it currently contains.
+      required:
+      - assistantId
+      - projectId
+      - projectUrl
+      - messages
+      properties:
+        assistantId:
+          type: string
+          description: Opaque assistant chat id (e.g. `vg_asst_...`).
+        projectId:
+          type: string
+          description: Opaque project id of the project this chat belongs to (e.g. `vg_proj_...`).
+        projectUrl:
+          type: string
+          format: uri
+          description: Deep link to open this chat's project in the VideoGen web app. Visible only to members of your team and project collaborators.
+        messages:
+          type: array
+          description: Every message in the chat in chronological order (oldest first).
+          items:
+            $ref: '#/components/schemas/AssistantMessage'
+    SendAssistantMessageRequest:
+      type: object
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          example: Make it more upbeat and add captions
+          description: The message to send to the assistant in this project chat.
+    StartAssistantChatRequest:
+      type: object
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          example: A 30-second explainer about our new pricing tiers
+          description: The first message to send to the assistant, exactly as a person would type it into the assistant on a new project.
+        autoGenerate:
+          type: boolean
+          default: false
+          description: When true, the assistant picks the best workflow for the message and immediately starts generating, skipping the suggestion step. When the assistant message reaches `succeeded`, its `generation` carries the workflow run to poll.
+    AssistantMessage:
+      description: A single message in an assistant chat. Discriminated by `role`.
+      oneOf:
+      - $ref: '#/components/schemas/AssistantInputMessage'
+      - $ref: '#/components/schemas/AssistantOutputMessage'
+      discriminator:
+        propertyName: role
+        mapping:
+          user: '#/components/schemas/AssistantInputMessage'
+          assistant: '#/components/schemas/AssistantOutputMessage'
+    AssistantMessageAttachment:
+      type: object
+      description: A file linked to an assistant chat message.
+      required:
+      - displayName
+      properties:
+        fileId:
+          type:
+          - string
+          - 'null'
+          description: File id (e.g. `vg_file_...`) when the attachment is a storage file. `null` for attachments that are not resolvable storage files.
+        displayName:
+          type: string
+          description: Human-readable name of the attachment.
+    AssistantActionDetail:
+      type: object
+      description: Extra data for rendering this action inline (in a chat surface or integration) without opening the web app. Fields are populated only when relevant to the action's kind; all are optional.
+      properties:
+        summary:
+          type:
+          - string
+          - 'null'
+          description: Human-readable summary of the proposed plan or edit (for `APPROVE_PLAN` and `APPLY_EDIT` actions).
+        creditsRemaining:
+          type:
+          - integer
+          - 'null'
+          description: Credits currently remaining on your team (for the usage/credits widget). A whole number of credits.
+        estimatedCredits:
+          type:
+          - integer
+          - 'null'
+          description: Estimated credit cost of the current workflow (for the cost-estimate widget). A whole number of credits.
+    AssistantInputMessage:
+      type: object
+      description: A user-authored message in an assistant chat.
+      required:
+      - messageId
+      - role
+      - status
+      - content
+      - attachments
+      - createdAt
+      properties:
+        messageId:
+          type: string
+          description: Opaque assistant message id (e.g. `vg_mesg_...`).
+        role:
+          type: string
+          enum:
+          - user
+          description: Always `user`.
+        status:
+          $ref: '#/components/schemas/AssistantMessageStatus'
+        content:
+          type: string
+          description: The user's message text.
+        attachments:
+          type: array
+          description: Files attached to this message.
+          items:
+            $ref: '#/components/schemas/AssistantMessageAttachment'
+        createdAt:
+          type: integer
+          description: Seconds since epoch (Unix timestamp) when the message was created.
+    ActOnAssistantActionResponse:
+      type: object
+      description: Returned when a `POST /v1/assistants/{assistantId}/actions/{actionId}` call is accepted. Use `messageId` to poll the resulting assistant message.
+      required:
+      - messageId
+      properties:
+        messageId:
+          type: string
+          description: Opaque assistant message id for the assistant reply produced by acting on the action (e.g. `vg_mesg_...`). Poll `GET /v1/assistant-messages/{messageId}`.
+    StartWorkflowRunResponse:
+      type: object
+      description: 'Returned when a workflow run is accepted. Poll `GET /v1/workflows/runs/{workflowRunId}` or subscribe to webhooks for completion. When the start request set `autoExport: true`, wait until `status` is `succeeded` and use `downloadUrl`.'
+      required:
+      - workflowRunId
+      - projectId
+      - projectUrl
+      - remixActionIds
+      properties:
+        workflowRunId:
+          type: string
+          description: Opaque workflow run id (e.g. `vg_work_...`).
+        projectId:
+          type: string
+          description: Id of the project created for this workflow run (e.g. `vg_proj_...`).
+        projectUrl:
+          type: string
+          format: uri
+          description: 'Deep link to open this project in the VideoGen web editor. Not required for an API-only integration: store `projectId` and use the Projects API (export, remix, metadata). Use `projectUrl` when a person should open the project in the app to review or edit it manually. The project is visible only to members of your team and any project collaborators, the same access model as a project created in the dashboard.'
+        remixActionIds:
+          type: array
+          items:
+            type: string
+          description: Opaque remix action ids (e.g. `vg_rmix_...`), one per `remixActions` entry in request order. Empty when no remix actions were requested. Each runs after the video is built; poll `GET /v1/projects/{projectId}/remix-actions`.
+    ErrorRequirement:
+      type: object
+      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
+    ApiError:
+      type: object
+      description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
+
+
+        - `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.
+
+
+        Common `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.
+
+        '
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          description: Human-readable error description. For display and logging only; do not branch on its exact text.
+        code:
+          type:
+          - string
+          - 'null'
+          description: Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies.
+        requirement:
+          description: What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.
+          anyOf:
+          - $ref: '#/components/schemas/ErrorRequirement'
+          - type: 'null'
+        internalErrorCode:
+          type:
+          - string
+          - 'null'
+          description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
+    AssistantMessageStatus:
+      type: string
+      description: Lifecycle status of an assistant chat message. `pending` and `running` are in-progress; `succeeded`, `failed`, and `cancelled` are terminal.
+      enum:
+      - pending
+      - running
+      - succeeded
+      - failed
+      - cancelled
+    ActOnAssistantActionRequest:
+      type: object
+      properties:
+        decision:
+          type: string
+          enum:
+          - APPROVE
+          - REJECT
+          default: APPROVE
+          description: Whether to approve (apply) or reject the action. Defaults to `APPROVE`.
+    AssistantAction:
+      type: object
+      description: An actionable widget the assistant offered on this turn. Act on it with `POST /v1/assistants/{assistantId}/actions/{actionId}` unless `requiresApp` is true.
+      required:
+      - actionId
+      - kind
+      - label
+      - requiresApp
+      properties:
+        actionId:
+          type: string
+          description: Opaque id to pass to the act-on-action endpoint.
+        kind:
+          $ref: '#/components/schemas/AssistantActionKind'
+        label:
+          type: string
+          description: Human-readable label describing what acting on this will do.
+        requiresApp:
+          type: boolean
+          description: When true, this action can only be completed in the web app; open the assistant's `projectUrl` instead of calling the API.
+        detail:
+          $ref: '#/components/schemas/AssistantActionDetail'
+          description: Optional extra data for rendering this action inline without opening the app.
+    StartAssistantChatResponse:
+      type: object
+      description: Returned when a `POST /v1/assistants` call is accepted. Poll `messageId` for the pending assistant reply; keep `assistantId` / `projectId` to continue the chat and address the project.
+      required:
+      - messageId
+      - assistantId
+      - projectId
+      - projectUrl
+      properties:
+        messageId:
+          type: string
+          description: Opaque assistant message id for the pending assistant reply (e.g. `vg_mesg_...`). Poll `GET /v1/assistant-messages/{messageId}`.
+        assistantId:
+          type: string
+          description: Opaque assistant chat id (e.g. `vg_asst_...`). Pass to `GET /v1/assistants/{assistantId}` and follow-up message/action calls.
+        projectId:
+          type: string
+          description: Opaque project id for the new chat (e.g. `vg_proj_...`).
+        projectUrl:
+          type: string
+          format: uri
+          description: Deep link to open this project in the VideoGen web app.
+    AssistantWorkflowSuggestion:
+      type: object
+      description: A starting-point workflow the assistant suggests for the conversation. Act on it with `POST /v1/assistants/{assistantId}/actions/{actionId}` to select the workflow and continue.
+      required:
+      - actionId
+      - workflowType
+      - title
+      - description
+      properties:
+        actionId:
+          type: string
+          description: Opaque id to pass to the act-on-action endpoint to select this workflow.
+        workflowType:
+          $ref: '#/components/schemas/WorkflowType'
+          description: Identifier of the suggested workflow.
+        title:
+          type: string
+          description: Short human-readable name of the suggested workflow.
+        description:
+          type: string
+          description: One-line explanation of what this workflow will do.
+    AssistantOutputMessage:
+      type: object
+      description: An assistant-authored message in an assistant chat, including any suggestions or actions it offered.
+      required:
+      - messageId
+      - role
+      - status
+      - content
+      - attachments
+      - workflowSuggestions
+      - actions
+      - generation
+      - error
+      - createdAt
+      properties:
+        messageId:
+          type: string
+          description: Opaque assistant message id (e.g. `vg_mesg_...`).
+        role:
+          type: string
+          enum:
+          - assistant
+          description: Always `assistant`.
+        status:
+          $ref: '#/components/schemas/AssistantMessageStatus'
+        content:
+          type:
+          - string
+          - 'null'
+          description: The assistant's text reply. `null` while `status` is `pending` or `running`; may be empty when the assistant only offered widgets.
+        attachments:
+          type: array
+          description: Files attached to this message.
+          items:
+            $ref: '#/components/schemas/AssistantMessageAttachment'
+        workflowSuggestions:
+          type: array
+          description: Workflow starting points the assistant suggested on this message. Empty when none were offered.
+          items:
+            $ref: '#/components/schemas/AssistantWorkflowSuggestion'
+        actions:
+          type: array
+          description: Actionable widgets the assistant offered on this message (plans, edits, tools, generate). Empty when none were offered.
+          items:
+            $ref: '#/components/schemas/AssistantAction'
+        generation:
+          description: 'Present when this message kicked off a workflow run (via `autoGenerate` on start, or acting on a workflow suggestion): the workflow run to poll via `GET /v1/workflows/runs/{workflowRunId}`.'
+          anyOf:
+          - $ref: '#/components/schemas/StartWorkflowRunResponse'
+          - type: 'null'
+        error:
+          description: Error details. `null` unless `status` is `failed`.
+          anyOf:
+          - $ref: '#/components/schemas/ApiError'
+          - type: 'null'
+        createdAt:
+          type: integer
+          description: Seconds since epoch (Unix timestamp) when the message was created.
+    AssistantActionKind:
+      type: string
+      description: Normalized category of an actionable widget the assistant offered. `APPROVE_PLAN` accepts a proposed generation plan; `APPLY_EDIT` applies a proposed edit (e.g. a rewritten script); `RUN_TOOL` runs an inline tool; `GENERATE` starts building the video; `OPEN_IN_APP` requires the full web app — open the assistant's `projectUrl` instead of acting via the API.
+      enum:
+      - APPROVE_PLAN
+      - APPLY_EDIT
+      - RUN_TOOL
+      - GENERATE
+      - OPEN_IN_APP
+  parameters:
+    MessageIdPath:
+      name: messageId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The assistant message id (e.g. `vg_mesg_...`) returned by an assistant POST.
+    AssistantIdPath:
+      name: assistantId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The assistant chat id (e.g. `vg_asst_...`). Every API project has one assistant chat; find it on `ProjectResponse.assistantId`.
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: API key from [app.videogen.io/api](https://app.videogen.io/api). The full key is only shown once when you create it.
