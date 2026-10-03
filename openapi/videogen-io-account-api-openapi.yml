@@ -36,6 +36,20 @@ paths:
                 $ref: '#/components/schemas/ApiError'
 components:
   schemas:
+    ErrorRequirement:
+      type: object
+      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
     ApiError:
       type: object
       description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
@@ -68,20 +82,6 @@ components:
           - string
           - 'null'
           description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
-    ErrorRequirement:
-      type: object
-      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
-        details:
-          type: object
-          additionalProperties:
-            type: string
-          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
     MeResponse:
       type: object
       required:

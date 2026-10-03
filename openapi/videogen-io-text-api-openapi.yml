@@ -97,6 +97,14 @@ components:
           additionalProperties:
             type: string
           description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
+    GenerateTextResponse:
+      type: object
+      required:
+      - text
+      properties:
+        text:
+          type: string
+          description: The generated text.
     ApiError:
       type: object
       description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
@@ -129,14 +137,6 @@ components:
           - string
           - 'null'
           description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
-    GenerateTextResponse:
-      type: object
-      required:
-      - text
-      properties:
-        text:
-          type: string
-          description: The generated text.
   securitySchemes:
     bearerAuth:
       type: http

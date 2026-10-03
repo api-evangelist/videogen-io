@@ -339,6 +339,68 @@ webhooks:
           description: Acknowledge receipt
 components:
   schemas:
+    AssistantMessageWebhookEventName:
+      type: string
+      description: Lifecycle events for assistant messages started via the developer API.
+      enum:
+      - assistant_message.succeeded
+      - assistant_message.failed
+      - assistant_message.cancelled
+    StartWorkflowRunResponse:
+      type: object
+      description: 'Returned when a workflow run is accepted. Poll `GET /v1/workflows/runs/{workflowRunId}` or subscribe to webhooks for completion. When the start request set `autoExport: true`, wait until `status` is `succeeded` and use `downloadUrl`.'
+      required:
+      - workflowRunId
+      - projectId
+      - projectUrl
+      - remixActionIds
+      properties:
+        workflowRunId:
+          type: string
+          description: Opaque workflow run id (e.g. `vg_work_...`).
+        projectId:
+          type: string
+          description: Id of the project created for this workflow run (e.g. `vg_proj_...`).
+        projectUrl:
+          type: string
+          format: uri
+          description: 'Deep link to open this project in the VideoGen web editor. Not required for an API-only integration: store `projectId` and use the Projects API (export, remix, metadata). Use `projectUrl` when a person should open the project in the app to review or edit it manually. The project is visible only to members of your team and any project collaborators, the same access model as a project created in the dashboard.'
+        remixActionIds:
+          type: array
+          items:
+            type: string
+          description: Opaque remix action ids (e.g. `vg_rmix_...`), one per `remixActions` entry in request order. Empty when no remix actions were requested. Each runs after the video is built; poll `GET /v1/projects/{projectId}/remix-actions`.
+    ProjectExportWebhookPayload:
+      type: object
+      description: Body POSTed to a registered webhook endpoint when a project export started via the API reaches a terminal state. Use `exportId` with `GET /v1/projects/{projectId}/exports/{exportId}` for signed download URLs.
+      required:
+      - event
+      - exportId
+      - projectId
+      - occurredAt
+      - exportFileId
+      properties:
+        event:
+          $ref: '#/components/schemas/ProjectExportWebhookEventName'
+        exportId:
+          type: string
+          description: Opaque export id matching the original request (e.g. `vg_expo_...`).
+        projectId:
+          type: string
+          description: Id of the exported project (e.g. `vg_proj_...`).
+        occurredAt:
+          type: integer
+          description: Seconds since epoch (Unix timestamp) at which VideoGen observed the terminal state.
+        exportFileId:
+          type:
+          - string
+          - 'null'
+          description: File id (e.g. `vg_file_...`) of the rendered MP4. Always present as a field; `null` until `project_export.succeeded`. Pass it to `POST /v1/files/{fileId}/hydrate` for signed download URLs.
+        error:
+          description: Error details. Present (non-null) only on `project_export.failed`; `null` otherwise.
+          anyOf:
+          - $ref: '#/components/schemas/ApiError'
+          - type: 'null'
     WorkflowType:
       type: string
       description: Workflow type identifier.
@@ -348,140 +410,6 @@ components:
       - SLIDESHOW_TO_VIDEO
       - STORYBOARD_TO_VIDEO
       - PROMPT_TO_VIDEO_CLIP
-    ToolExecutionWebhookEventName:
-      type: string
-      description: Webhook event types for tool execution lifecycle.
-      enum:
-      - tool_execution.succeeded
-      - tool_execution.failed
-      - tool_execution.cancelled
-    ToolSuccessResult:
-      type: object
-      description: Result for a single generated file. Only appears inside a succeeded execution's `results`, so every field below is always present.
-      required:
-      - fileId
-      - type
-      - downloadUrl
-      - downloadUrlExpiresAt
-      - thumbnailUrl
-      - thumbnailUrlExpiresAt
-      - file
-      properties:
-        fileId:
-          type: string
-          description: File id for the generated asset.
-        type:
-          $ref: '#/components/schemas/FileType'
-          description: File type.
-        downloadUrl:
-          type:
-          - string
-          - 'null'
-          format: uri
-          description: Private signed download URL for the generated file, valid for 7 days from when it was signed. Provided at the top level for convenience so you don't have to read it out of `file`. When you GET a single execution it is automatically re-signed if within an hour of expiring; list endpoints do not re-sign, so there it may be expired (check `downloadUrlExpiresAt`). See `downloadUrlExpiresAt` for the exact expiry. Null only in the rare case that the highest-quality rendition is still finalizing.
-        downloadUrlExpiresAt:
-          type:
-          - integer
-          - 'null'
-          description: Seconds since epoch (Unix timestamp) when `downloadUrl` expires. Null only when `downloadUrl` is null.
-        thumbnailUrl:
-          type:
-          - string
-          - 'null'
-          format: uri
-          description: Private signed thumbnail URL for the generated file, valid for 7 days from when it was signed. Provided at the top level for convenience so you don't have to read it out of `file`. Re-signed on the same terms as `downloadUrl` (single-execution GET re-signs when near expiry; list endpoints do not). Null for file types that have no thumbnail (e.g. audio).
-        thumbnailUrlExpiresAt:
-          type:
-          - integer
-          - 'null'
-          description: Seconds since epoch (Unix timestamp) when `thumbnailUrl` expires. Null when there is no thumbnail URL.
-        file:
-          description: Hydrated file metadata with signed download URLs (always present and hydrated for a succeeded result). Its signed URLs follow the same 24-hour validity and automatic re-signing as `downloadUrl`.
-          $ref: '#/components/schemas/FileInfo'
-    FileType:
-      type: string
-      enum:
-      - IMAGE
-      - VIDEO
-      - AUDIO
-      - PDF
-      - SLIDESHOW
-      - TEXT
-      - LOTTIE
-      description: File type. `TEXT` covers plain-text and editor-interchange documents; `LOTTIE` is a JSON animation.
-    ToolExecutionWebhookPayload:
-      type: object
-      description: Delivered to your webhook endpoint when a tool execution reaches a terminal state. The shape mirrors the `ExecutedTool` response with the addition of `event` and `occurredAt`.
-      required:
-      - event
-      - toolExecutionId
-      - occurredAt
-      - toolType
-      properties:
-        event:
-          $ref: '#/components/schemas/ToolExecutionWebhookEventName'
-        toolExecutionId:
-          type: string
-          description: Execution id matching the original request.
-        occurredAt:
-          type: integer
-          description: Seconds since epoch (Unix timestamp) when the execution reached a terminal state.
-        toolType:
-          type: string
-          description: Tool name (e.g. `GENERATE_IMAGE`, `TEXT_TO_SPEECH`).
-        results:
-          type: array
-          description: One entry per generated result, each with a hydrated `file`. Present only on `tool_execution.succeeded`.
-          items:
-            $ref: '#/components/schemas/ToolSuccessResult'
-        error:
-          description: Present only on `tool_execution.failed`.
-          anyOf:
-          - $ref: '#/components/schemas/ApiError'
-          - type: 'null'
-    AssistantMessage:
-      description: A single message in an assistant chat. Discriminated by `role`.
-      oneOf:
-      - $ref: '#/components/schemas/AssistantInputMessage'
-      - $ref: '#/components/schemas/AssistantOutputMessage'
-      discriminator:
-        propertyName: role
-        mapping:
-          user: '#/components/schemas/AssistantInputMessage'
-          assistant: '#/components/schemas/AssistantOutputMessage'
-    AssistantMessageAttachment:
-      type: object
-      description: A file linked to an assistant chat message.
-      required:
-      - displayName
-      properties:
-        fileId:
-          type:
-          - string
-          - 'null'
-          description: File id (e.g. `vg_file_...`) when the attachment is a storage file. `null` for attachments that are not resolvable storage files.
-        displayName:
-          type: string
-          description: Human-readable name of the attachment.
-    AssistantActionDetail:
-      type: object
-      description: Extra data for rendering this action inline (in a chat surface or integration) without opening the web app. Fields are populated only when relevant to the action's kind; all are optional.
-      properties:
-        summary:
-          type:
-          - string
-          - 'null'
-          description: Human-readable summary of the proposed plan or edit (for `APPROVE_PLAN` and `APPLY_EDIT` actions).
-        creditsRemaining:
-          type:
-          - integer
-          - 'null'
-          description: Credits currently remaining on your team (for the usage/credits widget). A whole number of credits.
-        estimatedCredits:
-          type:
-          - integer
-          - 'null'
-          description: Estimated credit cost of the current workflow (for the cost-estimate widget). A whole number of credits.
     FileSource:
       type: object
       description: A rendition source for a file (e.g. thumbnail, preview, download). Contains a signed URL and metadata.
@@ -521,6 +449,83 @@ components:
           - integer
           - 'null'
           description: File size in bytes, when known.
+    AssistantWorkflowSuggestion:
+      type: object
+      description: A starting-point workflow the assistant suggests for the conversation. Act on it with `POST /v1/assistants/{assistantId}/actions/{actionId}` to select the workflow and continue.
+      required:
+      - actionId
+      - workflowType
+      - title
+      - description
+      properties:
+        actionId:
+          type: string
+          description: Opaque id to pass to the act-on-action endpoint to select this workflow.
+        workflowType:
+          $ref: '#/components/schemas/WorkflowType'
+          description: Identifier of the suggested workflow.
+        title:
+          type: string
+          description: Short human-readable name of the suggested workflow.
+        description:
+          type: string
+          description: One-line explanation of what this workflow will do.
+    FileWebhookPayload:
+      type: object
+      description: Delivered to your webhook endpoint during the file lifecycle (upload, analysis, playback, and download readiness). Only sent for files uploaded via the API. The payload always includes a hydrated `file` object with the latest state.
+      required:
+      - event
+      - fileId
+      - occurredAt
+      - file
+      properties:
+        event:
+          $ref: '#/components/schemas/FileWebhookEventName'
+        fileId:
+          type: string
+          description: File id (e.g. `vg_file_...`).
+        occurredAt:
+          type: integer
+          description: Seconds since epoch (Unix timestamp) when the event occurred.
+        file:
+          $ref: '#/components/schemas/FileInfo'
+          description: Hydrated file object with the latest state at the time of the event.
+        error:
+          description: Error details. Present only on `file.upload.failed` and `file.analysis_failed`.
+          anyOf:
+          - $ref: '#/components/schemas/ApiError'
+          - type: 'null'
+    AssistantMessageWebhookPayload:
+      type: object
+      description: Body POSTed to a registered webhook endpoint when an assistant message reaches a terminal state. Mirrors the `AssistantMessage` GET response.
+      required:
+      - event
+      - messageId
+      - occurredAt
+      - message
+      properties:
+        event:
+          $ref: '#/components/schemas/AssistantMessageWebhookEventName'
+        messageId:
+          type: string
+          description: Opaque assistant message id (e.g. `vg_mesg_...`).
+        occurredAt:
+          type: integer
+          description: Seconds since epoch (Unix timestamp) when the message reached a terminal state.
+        message:
+          $ref: '#/components/schemas/AssistantMessage'
+          description: The full assistant message with its terminal `status`.
+    FileType:
+      type: string
+      enum:
+      - IMAGE
+      - VIDEO
+      - AUDIO
+      - PDF
+      - SLIDESHOW
+      - TEXT
+      - LOTTIE
+      description: File type. `TEXT` covers plain-text and editor-interchange documents; `LOTTIE` is a JSON animation.
     AssistantInputMessage:
       type: object
       description: A user-authored message in an assistant chat.
@@ -553,118 +558,164 @@ components:
         createdAt:
           type: integer
           description: Seconds since epoch (Unix timestamp) when the message was created.
-    FileWebhookPayload:
+    ToolExecutionWebhookEventName:
+      type: string
+      description: Webhook event types for tool execution lifecycle.
+      enum:
+      - tool_execution.succeeded
+      - tool_execution.failed
+      - tool_execution.cancelled
+    AssistantMessage:
+      description: A single message in an assistant chat. Discriminated by `role`.
+      oneOf:
+      - $ref: '#/components/schemas/AssistantInputMessage'
+      - $ref: '#/components/schemas/AssistantOutputMessage'
+      discriminator:
+        propertyName: role
+        mapping:
+          user: '#/components/schemas/AssistantInputMessage'
+          assistant: '#/components/schemas/AssistantOutputMessage'
+    ToolExecutionWebhookPayload:
       type: object
-      description: Delivered to your webhook endpoint during the file lifecycle (upload, analysis, playback, and download readiness). Only sent for files uploaded via the API. The payload always includes a hydrated `file` object with the latest state.
+      description: Delivered to your webhook endpoint when a tool execution reaches a terminal state. The shape mirrors the `ExecutedTool` response with the addition of `event` and `occurredAt`.
       required:
       - event
-      - fileId
+      - toolExecutionId
       - occurredAt
-      - file
+      - toolType
       properties:
         event:
-          $ref: '#/components/schemas/FileWebhookEventName'
-        fileId:
+          $ref: '#/components/schemas/ToolExecutionWebhookEventName'
+        toolExecutionId:
           type: string
-          description: File id (e.g. `vg_file_...`).
+          description: Execution id matching the original request.
         occurredAt:
           type: integer
-          description: Seconds since epoch (Unix timestamp) when the event occurred.
-        file:
-          $ref: '#/components/schemas/FileInfo'
-          description: Hydrated file object with the latest state at the time of the event.
+          description: Seconds since epoch (Unix timestamp) when the execution reached a terminal state.
+        toolType:
+          type: string
+          description: Tool name (e.g. `GENERATE_IMAGE`, `TEXT_TO_SPEECH`).
+        results:
+          type: array
+          description: One entry per generated result, each with a hydrated `file`. Present only on `tool_execution.succeeded`.
+          items:
+            $ref: '#/components/schemas/ToolSuccessResult'
         error:
-          description: Error details. Present only on `file.upload.failed` and `file.analysis_failed`.
+          description: Present only on `tool_execution.failed`.
           anyOf:
           - $ref: '#/components/schemas/ApiError'
           - type: 'null'
-    AssistantMessageWebhookEventName:
-      type: string
-      description: Lifecycle events for assistant messages started via the developer API.
-      enum:
-      - assistant_message.succeeded
-      - assistant_message.failed
-      - assistant_message.cancelled
-    TranscriptWord:
+    FileAnalysisMetadata:
       type: object
+      description: 'Background analysis state for a file. Background analysis populates `description`, `transcript`, `durationSeconds`, and the search embedding after a file is uploaded or generated; this object lets you render a progress indicator while it runs (and skip rendering once it''s done).
+
+        '
       required:
-      - startSeconds
-      - endSeconds
-      - word
-      description: A single timed word of a transcript.
+      - analysisLoadingState
+      - analysisProgressPercentage
       properties:
-        startSeconds:
+        analysisLoadingState:
+          type: string
+          enum:
+          - UNATTEMPTED
+          - LOADING
+          - FULFILLED
+          - REJECTED
+          description: 'Coarse-grained analysis state.
+
+
+            - `UNATTEMPTED`: analysis has not started yet.
+
+            - `LOADING`: analysis is in progress.
+
+            - `FULFILLED`: analysis completed successfully. `description`, `transcript`, and `durationSeconds` are now populated where applicable for the file''s type.
+
+            - `REJECTED`: analysis failed permanently and will not be retried.
+
+            '
+        analysisProgressPercentage:
           type: number
-          minimum: 0
-          description: Start time of the word in seconds from the beginning of the audio.
-        endSeconds:
-          type: number
-          description: End time of the word in seconds from the beginning of the audio. Must be greater than `startSeconds`.
-        word:
-          type: string
-          description: The spoken word, used verbatim for narration timing and captions.
-    ProjectExportWebhookEventName:
-      type: string
-      description: Lifecycle events emitted for project exports started via the developer API (`POST /v1/projects/{projectId}/export`).
-      enum:
-      - project_export.succeeded
-      - project_export.failed
-      - project_export.cancelled
-    ProjectExportWebhookPayload:
-      type: object
-      description: Body POSTed to a registered webhook endpoint when a project export started via the API reaches a terminal state. Use `exportId` with `GET /v1/projects/{projectId}/exports/{exportId}` for signed download URLs.
-      required:
-      - event
-      - exportId
-      - projectId
-      - occurredAt
-      - exportFileId
-      properties:
-        event:
-          $ref: '#/components/schemas/ProjectExportWebhookEventName'
-        exportId:
-          type: string
-          description: Opaque export id matching the original request (e.g. `vg_expo_...`).
-        projectId:
-          type: string
-          description: Id of the exported project (e.g. `vg_proj_...`).
-        occurredAt:
+          description: Progress in `[0, 100]`. Always `100` when `analysisLoadingState` is `FULFILLED`. Otherwise the most recent in-flight progress reported by the analysis task (or `0` if no progress has been reported yet).
+        analysisAttemptIndex:
           type: integer
-          description: Seconds since epoch (Unix timestamp) at which VideoGen observed the terminal state.
-        exportFileId:
+          description: Zero-based index of the current analysis task attempt. Only present while analysis is still loading (`UNATTEMPTED` or `LOADING`); omitted once analysis reaches a terminal state.
+    Transcript:
+      type: object
+      required:
+      - words
+      description: A transcript of an audio file, as timed words in order.
+      properties:
+        languageCode:
           type:
           - string
           - 'null'
-          description: File id (e.g. `vg_file_...`) of the rendered MP4. Always present as a field; `null` until `project_export.succeeded`. Pass it to `POST /v1/files/{fileId}/hydrate` for signed download URLs.
-        error:
-          description: Error details. Present (non-null) only on `project_export.failed`; `null` otherwise.
-          anyOf:
-          - $ref: '#/components/schemas/ApiError'
-          - type: 'null'
-    StartWorkflowRunResponse:
-      type: object
-      description: 'Returned when a workflow run is accepted. Poll `GET /v1/workflows/runs/{workflowRunId}` or subscribe to webhooks for completion. When the start request set `autoExport: true`, wait until `status` is `succeeded` and use `downloadUrl`.'
-      required:
-      - workflowRunId
-      - projectId
-      - projectUrl
-      - remixActionIds
-      properties:
-        workflowRunId:
-          type: string
-          description: Opaque workflow run id (e.g. `vg_work_...`).
-        projectId:
-          type: string
-          description: Id of the project created for this workflow run (e.g. `vg_proj_...`).
-        projectUrl:
-          type: string
-          format: uri
-          description: 'Deep link to open this project in the VideoGen web editor. Not required for an API-only integration: store `projectId` and use the Projects API (export, remix, metadata). Use `projectUrl` when a person should open the project in the app to review or edit it manually. The project is visible only to members of your team and any project collaborators, the same access model as a project created in the dashboard.'
-        remixActionIds:
+          description: Optional BCP-47 language code of the spoken audio (e.g. `en`, `es`). Used to tag the transcript's language; omit if unknown.
+        words:
           type: array
           items:
-            type: string
-          description: Opaque remix action ids (e.g. `vg_rmix_...`), one per `remixActions` entry in request order. Empty when no remix actions were requested. Each runs after the video is built; poll `GET /v1/projects/{projectId}/remix-actions`.
+            $ref: '#/components/schemas/TranscriptWord'
+          description: The transcript words, sorted by `startSeconds` and non-overlapping. Must contain at least one word.
+    AssistantMessageStatus:
+      type: string
+      description: Lifecycle status of an assistant chat message. `pending` and `running` are in-progress; `succeeded`, `failed`, and `cancelled` are terminal.
+      enum:
+      - pending
+      - running
+      - succeeded
+      - failed
+      - cancelled
+    AssistantActionDetail:
+      type: object
+      description: Extra data for rendering this action inline (in a chat surface or integration) without opening the web app. Fields are populated only when relevant to the action's kind; all are optional.
+      properties:
+        summary:
+          type:
+          - string
+          - 'null'
+          description: Human-readable summary of the proposed plan or edit (for `APPROVE_PLAN` and `APPLY_EDIT` actions).
+        creditsRemaining:
+          type:
+          - integer
+          - 'null'
+          description: Credits currently remaining on your team (for the usage/credits widget). A whole number of credits.
+        estimatedCredits:
+          type:
+          - integer
+          - 'null'
+          description: Estimated credit cost of the current workflow (for the cost-estimate widget). A whole number of credits.
+    FileWebhookEventName:
+      type: string
+      description: Webhook event types for the file lifecycle (upload, analysis, playback, and download readiness). Only fired for files uploaded via the API (not the VideoGen UI).
+      enum:
+      - file.upload.completed
+      - file.upload.failed
+      - file.playback_ready
+      - file.download_ready
+      - file.analysis_completed
+      - file.analysis_failed
+    AssistantActionKind:
+      type: string
+      description: Normalized category of an actionable widget the assistant offered. `APPROVE_PLAN` accepts a proposed generation plan; `APPLY_EDIT` applies a proposed edit (e.g. a rewritten script); `RUN_TOOL` runs an inline tool; `GENERATE` starts building the video; `OPEN_IN_APP` requires the full web app — open the assistant's `projectUrl` instead of acting via the API.
+      enum:
+      - APPROVE_PLAN
+      - APPLY_EDIT
+      - RUN_TOOL
+      - GENERATE
+      - OPEN_IN_APP
+    AssistantMessageAttachment:
+      type: object
+      description: A file linked to an assistant chat message.
+      required:
+      - displayName
+      properties:
+        fileId:
+          type:
+          - string
+          - 'null'
+          description: File id (e.g. `vg_file_...`) when the attachment is a storage file. `null` for attachments that are not resolvable storage files.
+        displayName:
+          type: string
+          description: Human-readable name of the attachment.
     ErrorRequirement:
       type: object
       description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
@@ -679,108 +730,6 @@ components:
           additionalProperties:
             type: string
           description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
-    FileWebhookEventName:
-      type: string
-      description: Webhook event types for the file lifecycle (upload, analysis, playback, and download readiness). Only fired for files uploaded via the API (not the VideoGen UI).
-      enum:
-      - file.upload.completed
-      - file.upload.failed
-      - file.playback_ready
-      - file.download_ready
-      - file.analysis_completed
-      - file.analysis_failed
-    WorkflowRunWebhookEventName:
-      type: string
-      description: Lifecycle events emitted for workflow runs started via the developer API.
-      enum:
-      - workflow_run.succeeded
-      - workflow_run.failed
-      - workflow_run.cancelled
-    ApiError:
-      type: object
-      description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
-
-
-        - `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.
-
-
-        Common `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.
-
-        '
-      required:
-      - message
-      properties:
-        message:
-          type: string
-          description: Human-readable error description. For display and logging only; do not branch on its exact text.
-        code:
-          type:
-          - string
-          - 'null'
-          description: Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies.
-        requirement:
-          description: What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.
-          anyOf:
-          - $ref: '#/components/schemas/ErrorRequirement'
-          - type: 'null'
-        internalErrorCode:
-          type:
-          - string
-          - 'null'
-          description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
-    AssistantMessageStatus:
-      type: string
-      description: Lifecycle status of an assistant chat message. `pending` and `running` are in-progress; `succeeded`, `failed`, and `cancelled` are terminal.
-      enum:
-      - pending
-      - running
-      - succeeded
-      - failed
-      - cancelled
-    AssistantAction:
-      type: object
-      description: An actionable widget the assistant offered on this turn. Act on it with `POST /v1/assistants/{assistantId}/actions/{actionId}` unless `requiresApp` is true.
-      required:
-      - actionId
-      - kind
-      - label
-      - requiresApp
-      properties:
-        actionId:
-          type: string
-          description: Opaque id to pass to the act-on-action endpoint.
-        kind:
-          $ref: '#/components/schemas/AssistantActionKind'
-        label:
-          type: string
-          description: Human-readable label describing what acting on this will do.
-        requiresApp:
-          type: boolean
-          description: When true, this action can only be completed in the web app; open the assistant's `projectUrl` instead of calling the API.
-        detail:
-          $ref: '#/components/schemas/AssistantActionDetail'
-          description: Optional extra data for rendering this action inline without opening the app.
-    AssistantWorkflowSuggestion:
-      type: object
-      description: A starting-point workflow the assistant suggests for the conversation. Act on it with `POST /v1/assistants/{assistantId}/actions/{actionId}` to select the workflow and continue.
-      required:
-      - actionId
-      - workflowType
-      - title
-      - description
-      properties:
-        actionId:
-          type: string
-          description: Opaque id to pass to the act-on-action endpoint to select this workflow.
-        workflowType:
-          $ref: '#/components/schemas/WorkflowType'
-          description: Identifier of the suggested workflow.
-        title:
-          type: string
-          description: Short human-readable name of the suggested workflow.
-        description:
-          type: string
-          description: One-line explanation of what this workflow will do.
     AssistantOutputMessage:
       type: object
       description: An assistant-authored message in an assistant chat, including any suggestions or actions it offered.
@@ -839,49 +788,6 @@ components:
         createdAt:
           type: integer
           description: Seconds since epoch (Unix timestamp) when the message was created.
-    AssistantActionKind:
-      type: string
-      description: Normalized category of an actionable widget the assistant offered. `APPROVE_PLAN` accepts a proposed generation plan; `APPLY_EDIT` applies a proposed edit (e.g. a rewritten script); `RUN_TOOL` runs an inline tool; `GENERATE` starts building the video; `OPEN_IN_APP` requires the full web app — open the assistant's `projectUrl` instead of acting via the API.
-      enum:
-      - APPROVE_PLAN
-      - APPLY_EDIT
-      - RUN_TOOL
-      - GENERATE
-      - OPEN_IN_APP
-    FileAnalysisMetadata:
-      type: object
-      description: 'Background analysis state for a file. Background analysis populates `description`, `transcript`, `durationSeconds`, and the search embedding after a file is uploaded or generated; this object lets you render a progress indicator while it runs (and skip rendering once it''s done).
-
-        '
-      required:
-      - analysisLoadingState
-      - analysisProgressPercentage
-      properties:
-        analysisLoadingState:
-          type: string
-          enum:
-          - UNATTEMPTED
-          - LOADING
-          - FULFILLED
-          - REJECTED
-          description: 'Coarse-grained analysis state.
-
-
-            - `UNATTEMPTED`: analysis has not started yet.
-
-            - `LOADING`: analysis is in progress.
-
-            - `FULFILLED`: analysis completed successfully. `description`, `transcript`, and `durationSeconds` are now populated where applicable for the file''s type.
-
-            - `REJECTED`: analysis failed permanently and will not be retried.
-
-            '
-        analysisProgressPercentage:
-          type: number
-          description: Progress in `[0, 100]`. Always `100` when `analysisLoadingState` is `FULFILLED`. Otherwise the most recent in-flight progress reported by the analysis task (or `0` if no progress has been reported yet).
-        analysisAttemptIndex:
-          type: integer
-          description: Zero-based index of the current analysis task attempt. Only present while analysis is still loading (`UNATTEMPTED` or `LOADING`); omitted once analysis reaches a terminal state.
     FileInfo:
       type: object
       description: Metadata for a generated file. Obtain ids from tool results or `GET /v1/files`.
@@ -1010,26 +916,97 @@ components:
         fileAnalysisMetadata:
           description: Background analysis state for the file (used to populate `description`, `transcript`, `durationSeconds`, and the search embedding). Omitted when the file was returned via a path that does not check analysis progress (e.g. tool-result inline files and webhook payloads).
           $ref: '#/components/schemas/FileAnalysisMetadata'
-    AssistantMessageWebhookPayload:
+    AssistantAction:
       type: object
-      description: Body POSTed to a registered webhook endpoint when an assistant message reaches a terminal state. Mirrors the `AssistantMessage` GET response.
+      description: An actionable widget the assistant offered on this turn. Act on it with `POST /v1/assistants/{assistantId}/actions/{actionId}` unless `requiresApp` is true.
       required:
-      - event
-      - messageId
-      - occurredAt
-      - message
+      - actionId
+      - kind
+      - label
+      - requiresApp
       properties:
-        event:
-          $ref: '#/components/schemas/AssistantMessageWebhookEventName'
-        messageId:
+        actionId:
           type: string
-          description: Opaque assistant message id (e.g. `vg_mesg_...`).
-        occurredAt:
-          type: integer
-          description: Seconds since epoch (Unix timestamp) when the message reached a terminal state.
-        message:
-          $ref: '#/components/schemas/AssistantMessage'
-          description: The full assistant message with its terminal `status`.
+          description: Opaque id to pass to the act-on-action endpoint.
+        kind:
+          $ref: '#/components/schemas/AssistantActionKind'
+        label:
+          type: string
+          description: Human-readable label describing what acting on this will do.
+        requiresApp:
+          type: boolean
+          description: When true, this action can only be completed in the web app; open the assistant's `projectUrl` instead of calling the API.
+        detail:
+          $ref: '#/components/schemas/AssistantActionDetail'
+          description: Optional extra data for rendering this action inline without opening the app.
+    WorkflowRunWebhookEventName:
+      type: string
+      description: Lifecycle events emitted for workflow runs started via the developer API.
+      enum:
+      - workflow_run.succeeded
+      - workflow_run.failed
+      - workflow_run.cancelled
+    TranscriptWord:
+      type: object
+      required:
+      - startSeconds
+      - endSeconds
+      - word
+      description: A single timed word of a transcript.
+      properties:
+        startSeconds:
+          type: number
+          minimum: 0
+          description: Start time of the word in seconds from the beginning of the audio.
+        endSeconds:
+          type: number
+          description: End time of the word in seconds from the beginning of the audio. Must be greater than `startSeconds`.
+        word:
+          type: string
+          description: The spoken word, used verbatim for narration timing and captions.
+    ToolSuccessResult:
+      type: object
+      description: Result for a single generated file. Only appears inside a succeeded execution's `results`, so every field below is always present.
+      required:
+      - fileId
+      - type
+      - downloadUrl
+      - downloadUrlExpiresAt
+      - thumbnailUrl
+      - thumbnailUrlExpiresAt
+      - file
+      properties:
+        fileId:
+          type: string
+          description: File id for the generated asset.
+        type:
+          $ref: '#/components/schemas/FileType'
+          description: File type.
+        downloadUrl:
+          type:
+          - string
+          - 'null'
+          format: uri
+          description: Private signed download URL for the generated file, valid for 7 days from when it was signed. Provided at the top level for convenience so you don't have to read it out of `file`. When you GET a single execution it is automatically re-signed if within an hour of expiring; list endpoints do not re-sign, so there it may be expired (check `downloadUrlExpiresAt`). See `downloadUrlExpiresAt` for the exact expiry. Null only in the rare case that the highest-quality rendition is still finalizing.
+        downloadUrlExpiresAt:
+          type:
+          - integer
+          - 'null'
+          description: Seconds since epoch (Unix timestamp) when `downloadUrl` expires. Null only when `downloadUrl` is null.
+        thumbnailUrl:
+          type:
+          - string
+          - 'null'
+          format: uri
+          description: Private signed thumbnail URL for the generated file, valid for 7 days from when it was signed. Provided at the top level for convenience so you don't have to read it out of `file`. Re-signed on the same terms as `downloadUrl` (single-execution GET re-signs when near expiry; list endpoints do not). Null for file types that have no thumbnail (e.g. audio).
+        thumbnailUrlExpiresAt:
+          type:
+          - integer
+          - 'null'
+          description: Seconds since epoch (Unix timestamp) when `thumbnailUrl` expires. Null when there is no thumbnail URL.
+        file:
+          description: Hydrated file metadata with signed download URLs (always present and hydrated for a succeeded result). Its signed URLs follow the same 24-hour validity and automatic re-signing as `downloadUrl`.
+          $ref: '#/components/schemas/FileInfo'
     WorkflowRunWebhookPayload:
       type: object
       description: 'Body POSTed to a registered webhook endpoint when a workflow run reaches a terminal state. When the run was started with `autoExport: true`, `workflow_run.succeeded` includes `downloadUrl`.'
@@ -1101,22 +1078,45 @@ components:
           - string
           - 'null'
           description: File id (e.g. `vg_file_...`) of the rendered MP4 when `autoExport` succeeded. Always present as a field; `null` otherwise.
-    Transcript:
+    ApiError:
       type: object
+      description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
+
+
+        - `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.
+
+
+        Common `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.
+
+        '
       required:
-      - words
-      description: A transcript of an audio file, as timed words in order.
+      - message
       properties:
-        languageCode:
+        message:
+          type: string
+          description: Human-readable error description. For display and logging only; do not branch on its exact text.
+        code:
           type:
           - string
           - 'null'
-          description: Optional BCP-47 language code of the spoken audio (e.g. `en`, `es`). Used to tag the transcript's language; omit if unknown.
-        words:
-          type: array
-          items:
-            $ref: '#/components/schemas/TranscriptWord'
-          description: The transcript words, sorted by `startSeconds` and non-overlapping. Must contain at least one word.
+          description: Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies.
+        requirement:
+          description: What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.
+          anyOf:
+          - $ref: '#/components/schemas/ErrorRequirement'
+          - type: 'null'
+        internalErrorCode:
+          type:
+          - string
+          - 'null'
+          description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
+    ProjectExportWebhookEventName:
+      type: string
+      description: Lifecycle events emitted for project exports started via the developer API (`POST /v1/projects/{projectId}/export`).
+      enum:
+      - project_export.succeeded
+      - project_export.failed
+      - project_export.cancelled
   securitySchemes:
     bearerAuth:
       type: http

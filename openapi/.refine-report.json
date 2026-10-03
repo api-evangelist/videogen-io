@@ -1,7 +1,7 @@
 {
   "provider": "videogen-io",
   "sources": [
-    "videogen-io-openapi.json"
+    "_original/videogen-io-openapi.json"
   ],
   "outputs": [
     "videogen-io-account-api-openapi.yml",
@@ -16,14 +16,25 @@
     "videogen-io-webhooks-api-openapi.yml",
     "videogen-io-workflows-api-openapi.yml"
   ],
-  "archived": [
-    "archived openapi/videogen-io-openapi.json"
-  ],
+  "archived": [],
   "errors": [],
   "warnings": [],
   "notes": [
+    "sourced from openapi/_original/ (1 archived document(s)); previously refined output at the top level was skipped rather than re-split",
     "videogen-io-openapi.json: upgraded openapi 3.1.0 -> OpenAPI 3.2.0",
-    "apis.yml register: written (+11 apis, 11 total)"
+    "apis.yml register: already-registered"
   ],
-  "skipped": []
+  "skipped": [
+    "videogen-io-account-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "videogen-io-assistant-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "videogen-io-entities-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "videogen-io-files-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "videogen-io-projects-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "videogen-io-resources-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "videogen-io-text-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "videogen-io-tools-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "videogen-io-webhook-events-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "videogen-io-webhooks-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "videogen-io-workflows-api-openapi.yml: previously refined output, superseded by openapi/_original/"
+  ]
 }

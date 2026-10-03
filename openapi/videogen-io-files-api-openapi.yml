@@ -218,31 +218,6 @@ paths:
                 $ref: '#/components/schemas/ApiError'
 components:
   schemas:
-    FileType:
-      type: string
-      enum:
-      - IMAGE
-      - VIDEO
-      - AUDIO
-      - PDF
-      - SLIDESHOW
-      - TEXT
-      - LOTTIE
-      description: File type. `TEXT` covers plain-text and editor-interchange documents; `LOTTIE` is a JSON animation.
-    SearchFilesResult:
-      type: object
-      required:
-      - similarity
-      - file
-      properties:
-        similarity:
-          type: number
-          minimum: 0
-          maximum: 1
-          example: 0.82
-          description: Cosine similarity between the query embedding and the file description embedding. Ranges from 0 (no match) to 1 (identical). Values above 0.7 typically indicate strong relevance.
-        file:
-          $ref: '#/components/schemas/FileInfo'
     FileSource:
       type: object
       description: A rendition source for a file (e.g. thumbnail, preview, download). Contains a signed URL and metadata.
@@ -282,109 +257,6 @@ components:
           - integer
           - 'null'
           description: File size in bytes, when known.
-    SearchFilesResponse:
-      type: object
-      required:
-      - results
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/SearchFilesResult'
-    TranscriptWord:
-      type: object
-      required:
-      - startSeconds
-      - endSeconds
-      - word
-      description: A single timed word of a transcript.
-      properties:
-        startSeconds:
-          type: number
-          minimum: 0
-          description: Start time of the word in seconds from the beginning of the audio.
-        endSeconds:
-          type: number
-          description: End time of the word in seconds from the beginning of the audio. Must be greater than `startSeconds`.
-        word:
-          type: string
-          description: The spoken word, used verbatim for narration timing and captions.
-    ErrorRequirement:
-      type: object
-      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
-        details:
-          type: object
-          additionalProperties:
-            type: string
-          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
-    SearchFilesRequest:
-      type: object
-      required:
-      - query
-      properties:
-        query:
-          type: string
-          description: Natural-language search query. The text is embedded and compared against file description vectors using cosine similarity.
-        numResults:
-          type: integer
-          minimum: 1
-          maximum: 100
-          default: 10
-          description: Number of results to return (1-100). Defaults to 10.
-        selfOnly:
-          type: boolean
-          default: false
-          description: When true, only files created by the calling API key's user are returned. When false (default), all files accessible to the team are included.
-    ApiError:
-      type: object
-      description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
-
-
-        - `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.
-
-
-        Common `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.
-
-        '
-      required:
-      - message
-      properties:
-        message:
-          type: string
-          description: Human-readable error description. For display and logging only; do not branch on its exact text.
-        code:
-          type:
-          - string
-          - 'null'
-          description: Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies.
-        requirement:
-          description: What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.
-          anyOf:
-          - $ref: '#/components/schemas/ErrorRequirement'
-          - type: 'null'
-        internalErrorCode:
-          type:
-          - string
-          - 'null'
-          description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
-    FileUploadResponse:
-      type: object
-      required:
-      - fileId
-      - uploadUrl
-      properties:
-        fileId:
-          type: string
-          description: The file id to use in subsequent API calls (e.g. `vg_file_...`).
-        uploadUrl:
-          type: string
-          description: Pre-signed URL. PUT the raw file bytes to this URL to complete the upload.
     GetFilesResponse:
       type: object
       required:
@@ -404,30 +276,17 @@ components:
           - string
           - 'null'
           description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
-    CreateFileUploadRequest:
-      type: object
-      required:
-      - displayName
-      properties:
-        type:
-          $ref: '#/components/schemas/FileType'
-          description: The type of file to upload. Optional; when omitted, the type is inferred after upload processing completes.
-        displayName:
-          type: string
-          description: Display name for the uploaded file.
-        isTemporary:
-          type: boolean
-          default: false
-          description: When true, the file is temporary. Temporary files are guaranteed to be available for 24 hours, after which they may be archived at any time. Temporary files are not analyzed (no description, transcript, or embedding will be generated), so they will not appear in search results. Defaults to false.
-        hideFromUi:
-          type: boolean
-          default: false
-          description: When true, the file is hidden from the VideoGen Media page by default. It remains accessible through the API. Defaults to false.
-        transcript:
-          description: Optional pre-computed transcript for an audio or video upload, as timed `words`. When provided, transcription is skipped and caption timing matches your transcript. Ignored for non-audio/video files.
-          anyOf:
-          - $ref: '#/components/schemas/Transcript'
-          - type: 'null'
+    FileType:
+      type: string
+      enum:
+      - IMAGE
+      - VIDEO
+      - AUDIO
+      - PDF
+      - SLIDESHOW
+      - TEXT
+      - LOTTIE
+      description: File type. `TEXT` covers plain-text and editor-interchange documents; `LOTTIE` is a JSON animation.
     FileAnalysisMetadata:
       type: object
       description: 'Background analysis state for a file. Background analysis populates `description`, `transcript`, `durationSeconds`, and the search embedding after a file is uploaded or generated; this object lets you render a progress indicator while it runs (and skip rendering once it''s done).
@@ -462,6 +321,59 @@ components:
         analysisAttemptIndex:
           type: integer
           description: Zero-based index of the current analysis task attempt. Only present while analysis is still loading (`UNATTEMPTED` or `LOADING`); omitted once analysis reaches a terminal state.
+    Transcript:
+      type: object
+      required:
+      - words
+      description: A transcript of an audio file, as timed words in order.
+      properties:
+        languageCode:
+          type:
+          - string
+          - 'null'
+          description: Optional BCP-47 language code of the spoken audio (e.g. `en`, `es`). Used to tag the transcript's language; omit if unknown.
+        words:
+          type: array
+          items:
+            $ref: '#/components/schemas/TranscriptWord'
+          description: The transcript words, sorted by `startSeconds` and non-overlapping. Must contain at least one word.
+    SearchFilesResponse:
+      type: object
+      required:
+      - results
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchFilesResult'
+    SearchFilesResult:
+      type: object
+      required:
+      - similarity
+      - file
+      properties:
+        similarity:
+          type: number
+          minimum: 0
+          maximum: 1
+          example: 0.82
+          description: Cosine similarity between the query embedding and the file description embedding. Ranges from 0 (no match) to 1 (identical). Values above 0.7 typically indicate strong relevance.
+        file:
+          $ref: '#/components/schemas/FileInfo'
+    ErrorRequirement:
+      type: object
+      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
     FileInfo:
       type: object
       description: Metadata for a generated file. Obtain ids from tool results or `GET /v1/files`.
@@ -590,23 +502,141 @@ components:
         fileAnalysisMetadata:
           description: Background analysis state for the file (used to populate `description`, `transcript`, `durationSeconds`, and the search embedding). Omitted when the file was returned via a path that does not check analysis progress (e.g. tool-result inline files and webhook payloads).
           $ref: '#/components/schemas/FileAnalysisMetadata'
-    Transcript:
+    TranscriptWord:
       type: object
       required:
-      - words
-      description: A transcript of an audio file, as timed words in order.
+      - startSeconds
+      - endSeconds
+      - word
+      description: A single timed word of a transcript.
       properties:
-        languageCode:
+        startSeconds:
+          type: number
+          minimum: 0
+          description: Start time of the word in seconds from the beginning of the audio.
+        endSeconds:
+          type: number
+          description: End time of the word in seconds from the beginning of the audio. Must be greater than `startSeconds`.
+        word:
+          type: string
+          description: The spoken word, used verbatim for narration timing and captions.
+    SearchFilesRequest:
+      type: object
+      required:
+      - query
+      properties:
+        query:
+          type: string
+          description: Natural-language search query. The text is embedded and compared against file description vectors using cosine similarity.
+        numResults:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+          description: Number of results to return (1-100). Defaults to 10.
+        selfOnly:
+          type: boolean
+          default: false
+          description: When true, only files created by the calling API key's user are returned. When false (default), all files accessible to the team are included.
+    FileUploadResponse:
+      type: object
+      required:
+      - fileId
+      - uploadUrl
+      properties:
+        fileId:
+          type: string
+          description: The file id to use in subsequent API calls (e.g. `vg_file_...`).
+        uploadUrl:
+          type: string
+          description: Pre-signed URL. PUT the raw file bytes to this URL to complete the upload.
+    ApiError:
+      type: object
+      description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
+
+
+        - `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.
+
+
+        Common `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.
+
+        '
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          description: Human-readable error description. For display and logging only; do not branch on its exact text.
+        code:
           type:
           - string
           - 'null'
-          description: Optional BCP-47 language code of the spoken audio (e.g. `en`, `es`). Used to tag the transcript's language; omit if unknown.
-        words:
-          type: array
-          items:
-            $ref: '#/components/schemas/TranscriptWord'
-          description: The transcript words, sorted by `startSeconds` and non-overlapping. Must contain at least one word.
+          description: Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies.
+        requirement:
+          description: What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.
+          anyOf:
+          - $ref: '#/components/schemas/ErrorRequirement'
+          - type: 'null'
+        internalErrorCode:
+          type:
+          - string
+          - 'null'
+          description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
+    CreateFileUploadRequest:
+      type: object
+      required:
+      - displayName
+      properties:
+        type:
+          $ref: '#/components/schemas/FileType'
+          description: The type of file to upload. Optional; when omitted, the type is inferred after upload processing completes.
+        displayName:
+          type: string
+          description: Display name for the uploaded file.
+        isTemporary:
+          type: boolean
+          default: false
+          description: When true, the file is temporary. Temporary files are guaranteed to be available for 24 hours, after which they may be archived at any time. Temporary files are not analyzed (no description, transcript, or embedding will be generated), so they will not appear in search results. Defaults to false.
+        hideFromUi:
+          type: boolean
+          default: false
+          description: When true, the file is hidden from the VideoGen Media page by default. It remains accessible through the API. Defaults to false.
+        transcript:
+          description: Optional pre-computed transcript for an audio or video upload, as timed `words`. When provided, transcription is skipped and caption timing matches your transcript. Ignored for non-audio/video files.
+          anyOf:
+          - $ref: '#/components/schemas/Transcript'
+          - type: 'null'
   parameters:
+    SelfOnlyQuery:
+      name: selfOnly
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+      description: When true, returns only items created by the API key's owner. When false (default), returns all items accessible to the team.
+    PaginationCursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Opaque pagination cursor returned as `nextCursor` by the previous page. Omit on the first request. Cursors are tied to the endpoint that produced them and must be passed unmodified. See [Pagination](/pagination).
+    FileIdPath:
+      name: fileId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The file id (e.g. `vg_file_...`).
+    IncludeExportFilesQuery:
+      name: includeExportFiles
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+      description: 'When true, includes export files: the raw output files of your exports (the rendered MP4 you download from an export). When false (default), they are omitted.'
     PaginationLimit:
       name: limit
       in: query
@@ -625,36 +655,6 @@ components:
         type: boolean
         default: false
       description: 'When true, includes project files: the generative files created within a project (e.g. each AI image and text-to-speech file produced inside a script-to-video workflow output). When false (default), they are omitted.'
-    FileIdPath:
-      name: fileId
-      in: path
-      required: true
-      schema:
-        type: string
-      description: The file id (e.g. `vg_file_...`).
-    SelfOnlyQuery:
-      name: selfOnly
-      in: query
-      required: false
-      schema:
-        type: boolean
-        default: false
-      description: When true, returns only items created by the API key's owner. When false (default), returns all items accessible to the team.
-    PaginationCursor:
-      name: cursor
-      in: query
-      required: false
-      schema:
-        type: string
-      description: Opaque pagination cursor returned as `nextCursor` by the previous page. Omit on the first request. Cursors are tied to the endpoint that produced them and must be passed unmodified. See [Pagination](/pagination).
-    IncludeExportFilesQuery:
-      name: includeExportFiles
-      in: query
-      required: false
-      schema:
-        type: boolean
-        default: false
-      description: 'When true, includes export files: the raw output files of your exports (the rendered MP4 you download from an export). When false (default), they are omitted.'
   securitySchemes:
     bearerAuth:
       type: http

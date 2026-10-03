@@ -204,44 +204,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 components:
-  parameters:
-    EntityIdPath:
-      name: entityId
-      in: path
-      required: true
-      schema:
-        type: string
-      description: The entity id (e.g. `vg_enti_...`).
-    PaginationCursor:
-      name: cursor
-      in: query
-      required: false
-      schema:
-        type: string
-      description: Opaque pagination cursor returned as `nextCursor` by the previous page. Omit on the first request. Cursors are tied to the endpoint that produced them and must be passed unmodified. See [Pagination](/pagination).
-    PaginationLimit:
-      name: limit
-      in: query
-      required: false
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 200
-        default: 50
-      description: Maximum number of items to return in the page. Defaults to 50; capped at 200. See [Pagination](/pagination).
-    EntityTypeQuery:
-      name: entityType
-      in: query
-      required: false
-      schema:
-        type: string
-        enum:
-        - ACTOR
-        - PRODUCT
-        - VISUAL_STYLE
-        - SLIDESHOW_THEME
-      description: When provided, returns only entities of this type. Omit to return all entities.
   schemas:
+    EntityReference:
+      type: object
+      description: A file attached to an entity as a reference image.
+      required:
+      - fileId
+      - description
+      - isDefault
+      properties:
+        fileId:
+          type: string
+          description: The reference image file id (e.g. `vg_file_...`). Hydrate it via `GET /v1/files/{fileId}` to fetch a viewable URL.
+        description:
+          type: string
+          description: Optional description of the reference. Empty string when not set.
+        isDefault:
+          type: boolean
+          description: When true, this is the entity's primary reference (used for its thumbnail).
     ListEntitiesResponse:
       type: object
       required:
@@ -261,6 +241,41 @@ components:
           - string
           - 'null'
           description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
+    EntityArchiveResponse:
+      type: object
+      required:
+      - entityId
+      - archived
+      properties:
+        entityId:
+          type: string
+          description: The id of the archived entity.
+        archived:
+          type: boolean
+          description: Always true on success.
+    AddEntityReferenceRequest:
+      type: object
+      required:
+      - fileId
+      properties:
+        fileId:
+          type: string
+          description: The file id (e.g. `vg_file_...`) of an image to attach as a reference.
+        description:
+          type: string
+          description: Optional description of the reference.
+        isDefault:
+          type: boolean
+          default: false
+          description: When true, make this the entity's primary reference (used for its thumbnail).
+    RemoveEntityReferenceRequest:
+      type: object
+      required:
+      - fileId
+      properties:
+        fileId:
+          type: string
+          description: The file id (e.g. `vg_file_...`) of the reference to remove.
     ErrorRequirement:
       type: object
       description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
@@ -275,31 +290,58 @@ components:
           additionalProperties:
             type: string
           description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
-    RemoveEntityReferenceRequest:
+    CreateEntityRequest:
       type: object
       required:
-      - fileId
+      - entityType
+      - name
       properties:
-        fileId:
+        entityType:
           type: string
-          description: The file id (e.g. `vg_file_...`) of the reference to remove.
-    EntityReference:
-      type: object
-      description: A file attached to an entity as a reference image.
-      required:
-      - fileId
-      - description
-      - isDefault
-      properties:
-        fileId:
+          enum:
+          - ACTOR
+          - PRODUCT
+          - VISUAL_STYLE
+          - SLIDESHOW_THEME
+          description: ACTOR features a consistent character; PRODUCT features a consistent product or object; VISUAL_STYLE guides the look of generated images; SLIDESHOW_THEME is a shared slide design system (fonts, colors, layout) applied to every slide of a slideshow-to-video deck.
+        name:
           type: string
-          description: The reference image file id (e.g. `vg_file_...`). Hydrate it via `GET /v1/files/{fileId}` to fetch a viewable URL.
+          description: Display name.
         description:
           type: string
-          description: Optional description of the reference. Empty string when not set.
-        isDefault:
+          description: Optional description.
+    EntityActorConfig:
+      type: object
+      description: Read-only voice and avatar summary for an ACTOR entity. Always null for non-ACTOR entities.
+      required:
+      - hasVoice
+      - hasAvatarPresenter
+      properties:
+        voiceDisplayName:
+          type:
+          - string
+          - 'null'
+          description: Display name of the actor's voice when one is configured. Null otherwise.
+        hasVoice:
           type: boolean
-          description: When true, this is the entity's primary reference (used for its thumbnail).
+          description: True when the actor has a configured voice.
+        hasAvatarPresenter:
+          type: boolean
+          description: True when the actor has a built-in presenter or image reference that can be used with `actorEntityId` for avatar generation.
+    UpdateEntityRequest:
+      type: object
+      description: At least one field must be provided.
+      properties:
+        name:
+          type:
+          - string
+          - 'null'
+          description: New display name. Omit to leave unchanged.
+        description:
+          type:
+          - string
+          - 'null'
+          description: New description. Omit to leave unchanged.
     ApiError:
       type: object
       description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
@@ -332,85 +374,6 @@ components:
           - string
           - 'null'
           description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
-    UpdateEntityRequest:
-      type: object
-      description: At least one field must be provided.
-      properties:
-        name:
-          type:
-          - string
-          - 'null'
-          description: New display name. Omit to leave unchanged.
-        description:
-          type:
-          - string
-          - 'null'
-          description: New description. Omit to leave unchanged.
-    EntityActorConfig:
-      type: object
-      description: Read-only voice and avatar summary for an ACTOR entity. Always null for non-ACTOR entities.
-      required:
-      - hasVoice
-      - hasAvatarPresenter
-      properties:
-        voiceDisplayName:
-          type:
-          - string
-          - 'null'
-          description: Display name of the actor's voice when one is configured. Null otherwise.
-        hasVoice:
-          type: boolean
-          description: True when the actor has a configured voice.
-        hasAvatarPresenter:
-          type: boolean
-          description: True when the actor has a built-in presenter or image reference that can be used with `actorEntityId` for avatar generation.
-    AddEntityReferenceRequest:
-      type: object
-      required:
-      - fileId
-      properties:
-        fileId:
-          type: string
-          description: The file id (e.g. `vg_file_...`) of an image to attach as a reference.
-        description:
-          type: string
-          description: Optional description of the reference.
-        isDefault:
-          type: boolean
-          default: false
-          description: When true, make this the entity's primary reference (used for its thumbnail).
-    EntityArchiveResponse:
-      type: object
-      required:
-      - entityId
-      - archived
-      properties:
-        entityId:
-          type: string
-          description: The id of the archived entity.
-        archived:
-          type: boolean
-          description: Always true on success.
-    CreateEntityRequest:
-      type: object
-      required:
-      - entityType
-      - name
-      properties:
-        entityType:
-          type: string
-          enum:
-          - ACTOR
-          - PRODUCT
-          - VISUAL_STYLE
-          - SLIDESHOW_THEME
-          description: ACTOR features a consistent character; PRODUCT features a consistent product or object; VISUAL_STYLE guides the look of generated images; SLIDESHOW_THEME is a shared slide design system (fonts, colors, layout) applied to every slide of a slideshow-to-video deck.
-        name:
-          type: string
-          description: Display name.
-        description:
-          type: string
-          description: Optional description.
     Entity:
       type: object
       description: A reusable actor, product, visual style, or slideshow theme. Attach its reference images to workflows for consistent characters, looks, and slide designs.
@@ -459,6 +422,43 @@ components:
         isBuiltIn:
           type: boolean
           description: When true, this is a VideoGen catalog entity. Built-in entities cannot be updated, archived, or have references added or removed.
+  parameters:
+    PaginationLimit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+      description: Maximum number of items to return in the page. Defaults to 50; capped at 200. See [Pagination](/pagination).
+    EntityIdPath:
+      name: entityId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The entity id (e.g. `vg_enti_...`).
+    PaginationCursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Opaque pagination cursor returned as `nextCursor` by the previous page. Omit on the first request. Cursors are tied to the endpoint that produced them and must be passed unmodified. See [Pagination](/pagination).
+    EntityTypeQuery:
+      name: entityType
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+        - ACTOR
+        - PRODUCT
+        - VISUAL_STYLE
+        - SLIDESHOW_THEME
+      description: When provided, returns only entities of this type. Omit to return all entities.
   securitySchemes:
     bearerAuth:
       type: http

@@ -198,273 +198,58 @@ paths:
                 $ref: '#/components/schemas/ApiError'
 components:
   schemas:
-    VisualPacing:
-      type: string
-      enum:
-      - FAST
-      - MEDIUM
-      - SLOW
-      default: MEDIUM
-      description: How quickly visuals change. FAST shows more, shorter shots; SLOW holds each visual longer. Defaults to MEDIUM.
-    ModelQuality:
-      type: string
-      enum:
-      - LOW
-      - STANDARD
-      - HIGH
-      - MAX
-      description: 'AI generation quality tier, shared across every generative feature (image, video, text, and so on). `LOW` is fastest and cheapest, `STANDARD` balances quality and cost, `HIGH` is higher quality, and `MAX` is the highest quality.
-
-
-        When a request omits the quality field, VideoGen falls back to your account''s **Default AI quality** for that feature, which you can change at [Account settings](https://app.videogen.io/settings/account). Not every feature supports every tier; unsupported tiers are rejected with an error (see each field''s description).
-
-        '
-    WorkflowType:
-      type: string
-      description: Workflow type identifier.
-      enum:
-      - SCRIPT_TO_VIDEO
-      - VOICEOVER_TO_VIDEO
-      - SLIDESHOW_TO_VIDEO
-      - STORYBOARD_TO_VIDEO
-      - PROMPT_TO_VIDEO_CLIP
-    PromptToVideoClipRequest:
+    StartWorkflowRunResponse:
       type: object
+      description: 'Returned when a workflow run is accepted. Poll `GET /v1/workflows/runs/{workflowRunId}` or subscribe to webhooks for completion. When the start request set `autoExport: true`, wait until `status` is `succeeded` and use `downloadUrl`.'
       required:
-      - prompt
-      description: Creates a project from a text prompt and generates one short AI video clip. VideoGen generates an opening frame from the prompt (optionally guided by reference images), then animates that frame into a video inside an editable project. This workflow does not accept `remixActions`. For a standalone clip without a project, use `POST /v1/tools/generate-video-clip`. For longer narrated multi-scene videos, use `POST /v1/workflows/script-to-video`.
+      - workflowRunId
+      - projectId
+      - projectUrl
+      - remixActionIds
       properties:
-        prompt:
+        workflowRunId:
           type: string
-          description: Text prompt describing the video to generate (e.g. `A golden retriever running through a sunlit meadow in slow motion, cinematic`).
-        imageFileIds:
+          description: Opaque workflow run id (e.g. `vg_work_...`).
+        projectId:
+          type: string
+          description: Id of the project created for this workflow run (e.g. `vg_proj_...`).
+        projectUrl:
+          type: string
+          format: uri
+          description: 'Deep link to open this project in the VideoGen web editor. Not required for an API-only integration: store `projectId` and use the Projects API (export, remix, metadata). Use `projectUrl` when a person should open the project in the app to review or edit it manually. The project is visible only to members of your team and any project collaborators, the same access model as a project created in the dashboard.'
+        remixActionIds:
           type: array
           items:
             type: string
-          maxItems: 4
-          description: Optional ids of previously uploaded reference images (e.g. `vg_file_...`) that guide the opening frame. Upload files via `POST /v1/files/upload` first.
-        durationSeconds:
+          description: Opaque remix action ids (e.g. `vg_rmix_...`), one per `remixActions` entry in request order. Empty when no remix actions were requested. Each runs after the video is built; poll `GET /v1/projects/{projectId}/remix-actions`.
+    WorkflowRgbColor:
+      type: object
+      required:
+      - red
+      - green
+      - blue
+      description: An RGB color. Each channel is an integer from 0 to 255.
+      properties:
+        red:
           type: integer
-          minimum: 1
-          maximum: 30
-          description: Desired clip length in whole seconds (1 to 30). Defaults to 10. The generated clip is clamped to the selected quality's supported range.
-        aspectRatio:
-          $ref: '#/components/schemas/AspectRatio'
-          description: Aspect ratio for the generated video. Defaults to 16:9 when omitted.
-        quality:
-          $ref: '#/components/schemas/ModelQuality'
-          description: Video generation quality tier (`LOW`, `STANDARD`, `HIGH`, or `MAX`). Also used for the opening-frame image. Optional; when omitted, your account's Default AI quality for video is used (change it at https://app.videogen.io/settings/account).
-        isOutputTemporary:
-          type: boolean
-          default: false
-          description: 'When true, the generated OUTPUT files (the opening-frame image and the video clip) are created as temporary: guaranteed available for 24 hours, after which they may be archived and later deleted. Use this when your integration downloads or re-hosts the results itself and does not need VideoGen to retain them. The project and its metadata are unaffected. Defaults to false.'
-        hideFromUi:
-          type: boolean
-          default: false
-          description: When true, the project is hidden from Home and Projects by default, and generated files are hidden from the Media page. The project and files remain accessible through the API. Defaults to false.
-        autoExport:
-          type: boolean
-          default: false
-          description: When true, VideoGen exports an MP4 after the video is built (and after any `remixActions` on this request finish). The workflow run stays `running` until that export succeeds or fails. On success, poll `GET /v1/workflows/runs/{workflowRunId}` and use `downloadUrl`. Defaults to false.
-        exportOptions:
-          $ref: '#/components/schemas/ExportProjectRequest'
-          description: Export settings used when `autoExport` is true. Ignored when `autoExport` is false. Omitted fields use the same defaults as `POST /v1/projects/{projectId}/export`.
-    RemixActionRegenerateImages:
-      type: object
-      required:
-      - type
-      - stylePrompt
-      description: 'Restyle every eligible still image in the project to a new look (image-to-image), replacing each image in place. Eligible images are non-SVG image assets backed by an uploaded or generated file. Runs asynchronously: one restyled image is generated per eligible image. If the project has no eligible images, the action is skipped and completes successfully without changing anything.'
-      properties:
-        type:
-          type: string
-          enum:
-          - REGENERATE_IMAGES
-        stylePrompt:
-          type: string
-          description: 'A full, strict paragraph for the look of every image (medium, texture, palette, then composition). Do not pass a short label such as `watercolor painting`. Image models pack the frame with text, charts, diagrams, and extra objects unless the style forbids that. Keep the picture simple: one uncluttered subject in the middle half of the frame, empty margins, and no on-image text or diagrams unless you asked for one specific word or number.'
-        quality:
-          $ref: '#/components/schemas/ModelQuality'
-          description: Image generation quality tier for the restyled images. Optional; when omitted, your account's Default AI quality for images is used (change it at https://app.videogen.io/settings/account).
-    RemixActionAddZoom:
-      type: object
-      required:
-      - type
-      description: Apply a Ken Burns zoom to every eligible still image in the project, including uploaded images. Replaces any existing still-image effect on those assets. If the project has no eligible stills, the action is skipped and completes successfully without changing anything.
-      properties:
-        type:
-          type: string
-          enum:
-          - ADD_ZOOM
-    RemixActionAddTransitions:
-      type: object
-      required:
-      - type
-      description: 'Stamp transitions across the project. Not per-boundary: each field you set is applied uniformly to every boundary in that scope, replacing any transition already there. Set the transition between sections, between base-layer assets, or both; omit or pass `null` for a scope to leave its transitions untouched.'
-      properties:
-        type:
-          type: string
-          enum:
-          - ADD_TRANSITIONS
-        sectionTransition:
-          description: Transition applied at every boundary between sections, replacing any existing section transitions. Omit or pass `null` to leave section transitions untouched.
-          anyOf:
-          - $ref: '#/components/schemas/RemixTransitionStyle'
-          - type: 'null'
-        assetTransition:
-          description: Transition applied at every boundary between base-layer assets within sections, replacing any existing asset transitions. Omit or pass `null` to leave asset transitions untouched.
-          anyOf:
-          - $ref: '#/components/schemas/RemixTransitionStyle'
-          - type: 'null'
-    RemixActionCleanUpTranscript:
-      type: object
-      required:
-      - type
-      description: Tighten every transcript in the project by removing silent pauses and/or filler words. Useful for polishing narration captured from raw recordings.
-      properties:
-        type:
-          type: string
-          enum:
-          - CLEAN_UP_TRANSCRIPT
-        removeFillers:
-          type:
-          - boolean
-          - 'null'
-          description: Remove filler words ("um", "uh", …). Defaults to `true`.
-        removePauses:
-          type:
-          - boolean
-          - 'null'
-          description: Remove silent pauses longer than `minPauseSeconds`. Defaults to `true`.
-        fillerWords:
-          type:
-          - array
-          - 'null'
-          items:
-            type: string
-          description: Override the filler-word list to remove. Omit or pass `null` to use the built-in defaults.
-        minPauseSeconds:
-          type:
-          - number
-          - 'null'
           minimum: 0
-          description: Shortest pause (in seconds) to remove; pauses below this stay. Omit or pass `null` to use the default threshold.
-    WorkflowCaptionBackgroundStyle:
-      type: object
-      required:
-      - type
-      - backgroundColor
-      description: Background drawn behind caption text.
-      properties:
-        type:
-          type: string
-          enum:
-          - RECT
-          - WRAPPED
-          - WORD_BY_WORD
-          description: RECT draws one rectangle behind the whole line; WRAPPED hugs the text; WORD_BY_WORD draws a box per word.
-        backgroundColor:
-          $ref: '#/components/schemas/WorkflowRgbColor'
-        borderRadiusProportion:
-          type: number
+          maximum: 255
+        green:
+          type: integer
           minimum: 0
-          maximum: 1
-          description: Corner rounding as a proportion of the background height, between 0 (square corners) and 1 (fully rounded).
-        opacityProportion:
-          type: number
+          maximum: 255
+        blue:
+          type: integer
           minimum: 0
-          maximum: 1
-          description: Background opacity from 0 (transparent) to 1 (opaque).
-    RemixAction:
-      description: A single edit applied to a project. Each array entry is exactly one of the action types below, chosen by its `type` field; the variants are mutually-exclusive options, not fields you must all provide. Include only the actions you want.
-      oneOf:
-      - $ref: '#/components/schemas/RemixActionSetBackgroundMusic'
-      - $ref: '#/components/schemas/RemixActionSetLogo'
-      - $ref: '#/components/schemas/RemixActionEnableCaptions'
-      - $ref: '#/components/schemas/RemixActionDisableCaptions'
-      - $ref: '#/components/schemas/RemixActionAddTransitions'
-      - $ref: '#/components/schemas/RemixActionAddZoom'
-      - $ref: '#/components/schemas/RemixActionResizeProject'
-      - $ref: '#/components/schemas/RemixActionCleanUpTranscript'
-      - $ref: '#/components/schemas/RemixActionConvertImagesToVideos'
-      - $ref: '#/components/schemas/RemixActionRegenerateImages'
-      - $ref: '#/components/schemas/RemixActionUpscaleAssets'
-      - $ref: '#/components/schemas/RemixActionChangeNarrator'
-      - $ref: '#/components/schemas/RemixActionShuffleStockVisuals'
-      - $ref: '#/components/schemas/RemixActionGenerateMusic'
-      - $ref: '#/components/schemas/RemixActionTranslateProject'
-      discriminator:
-        propertyName: type
-        mapping:
-          SET_BACKGROUND_MUSIC: '#/components/schemas/RemixActionSetBackgroundMusic'
-          SET_LOGO: '#/components/schemas/RemixActionSetLogo'
-          ENABLE_CAPTIONS: '#/components/schemas/RemixActionEnableCaptions'
-          DISABLE_CAPTIONS: '#/components/schemas/RemixActionDisableCaptions'
-          ADD_TRANSITIONS: '#/components/schemas/RemixActionAddTransitions'
-          ADD_ZOOM: '#/components/schemas/RemixActionAddZoom'
-          RESIZE_PROJECT: '#/components/schemas/RemixActionResizeProject'
-          CLEAN_UP_TRANSCRIPT: '#/components/schemas/RemixActionCleanUpTranscript'
-          CONVERT_IMAGES_TO_VIDEOS: '#/components/schemas/RemixActionConvertImagesToVideos'
-          REGENERATE_IMAGES: '#/components/schemas/RemixActionRegenerateImages'
-          UPSCALE_ASSETS: '#/components/schemas/RemixActionUpscaleAssets'
-          CHANGE_NARRATOR: '#/components/schemas/RemixActionChangeNarrator'
-          SHUFFLE_STOCK_VISUALS: '#/components/schemas/RemixActionShuffleStockVisuals'
-          GENERATE_MUSIC: '#/components/schemas/RemixActionGenerateMusic'
-          TRANSLATE_PROJECT: '#/components/schemas/RemixActionTranslateProject'
-    RemixActionShuffleStockVisuals:
-      type: object
-      required:
-      - type
-      description: 'Replace every stock (library) visual in the project with a fresh alternative from the same search, replacing each in place. Runs asynchronously: each stock asset''s original search is re-run, excluding the currently-shown result. If the project has no shuffleable stock visuals, the action is skipped and completes successfully without changing anything.'
-      properties:
-        type:
-          type: string
-          enum:
-          - SHUFFLE_STOCK_VISUALS
-    RemixActionUpscaleAssets:
-      type: object
-      required:
-      - type
-      description: 'Sharpen every eligible asset in the project up to 4K, replacing each in place. Runs asynchronously: one upscaled asset is generated per eligible asset. If the project has no eligible assets, the action is skipped and completes successfully without changing anything.'
-      properties:
-        type:
-          type: string
-          enum:
-          - UPSCALE_ASSETS
-        includeVideos:
-          type:
-          - boolean
-          - 'null'
-          description: Also upscale video assets (billed per output second). Defaults to `true`.
-        includeStockContent:
-          type:
-          - boolean
-          - 'null'
-          description: Also upscale stock (library) assets, not just uploaded or generated ones. Defaults to `true`.
-    RemixActionTranslateProject:
-      type: object
-      required:
-      - type
-      - languageCode
-      description: 'Translate the whole project into another language: every piece of text (title, section names, on-screen text overlays, transcripts, and narration scripts) is translated, and — unless disabled — each AI voiceover is re-narrated in the new language. Runs asynchronously. Requires a Pro subscription. Retrieve the list of supported language codes from `GET /v1/resources/languages`.'
-      properties:
-        type:
-          type: string
-          enum:
-          - TRANSLATE_PROJECT
-        languageCode:
-          type: string
-          description: Target language code to translate the project into (e.g. `es`, `fr`, `ja`). Must be one of the codes returned by `GET /v1/resources/languages`.
-        changeVoice:
-          type:
-          - boolean
-          - 'null'
-          description: Swap each AI voiceover to a voice that natively matches the target language. Recommended, since keeping the original voice usually produces a foreign accent. Defaults to `true`.
-        translateImageText:
-          type:
-          - boolean
-          - 'null'
-          description: Also re-generate every eligible image so that text baked into the image is translated too (image-to-image). Billed per generated image. Defaults to `false`.
+          maximum: 255
+    WatermarkMode:
+      type: string
+      enum:
+      - NONE
+      - VIDEO_GEN
+      - AUTO
+      default: AUTO
+      description: Controls whether the VideoGen watermark is applied to the output. `AUTO` applies the watermark unless you have a Pro plan. `VIDEO_GEN` always applies it. `NONE` removes the watermark (requires Pro; returns an error if you don't have it).
     WorkflowRun:
       type: object
       required:
@@ -543,6 +328,324 @@ components:
           - string
           - 'null'
           description: File id (e.g. `vg_file_...`) of the rendered MP4 when `autoExport` succeeded. Always present as a field; `null` otherwise. Pass it to `POST /v1/files/{fileId}/hydrate` for a fresh signed URL.
+    WorkflowType:
+      type: string
+      description: Workflow type identifier.
+      enum:
+      - SCRIPT_TO_VIDEO
+      - VOICEOVER_TO_VIDEO
+      - SLIDESHOW_TO_VIDEO
+      - STORYBOARD_TO_VIDEO
+      - PROMPT_TO_VIDEO_CLIP
+    JobStatus:
+      type: string
+      description: Lifecycle status shared by every asynchronous job (tool executions, workflow runs, remix actions, project exports, and timeline interchange jobs). `pending` and `running` are in-progress; `succeeded`, `failed`, and `cancelled` are terminal.
+      enum:
+      - pending
+      - running
+      - succeeded
+      - failed
+      - cancelled
+    ExportProjectQuality:
+      type: string
+      description: Vertical resolution tier for the rendered MP4.
+      enum:
+      - STANDARD
+      - HIGH
+      - FULL_HIGH
+      - ULTRA_HIGH
+    RemixActionEnableCaptions:
+      type: object
+      required:
+      - type
+      description: Show captions on every captionable section. Optionally override the project caption style.
+      properties:
+        type:
+          type: string
+          enum:
+          - ENABLE_CAPTIONS
+        captionStyle:
+          description: Caption styling to apply. Omit or pass `null` to show captions with the current style. Any provided field overrides that field; omitted fields keep their current value.
+          anyOf:
+          - $ref: '#/components/schemas/WorkflowCaptionStyle'
+          - type: 'null'
+    VoiceoverToVideoRequest:
+      type: object
+      required:
+      - fileId
+      - visualStyle
+      properties:
+        fileId:
+          type: string
+          description: Opaque file id of an uploaded voiceover audio file (e.g. `vg_file_...`). Upload the file first via `POST /v1/files/upload`. Attach a pre-computed transcript at upload time (via the `transcript` field on `POST /v1/files/upload`) to skip re-transcription.
+        scenes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SceneDescriptionRange'
+          description: Optional timed scene descriptions guiding what to show on screen during each absolute time range of the video. Ranges must be sorted by `startSeconds` and non-overlapping. Omit to let the workflow choose visuals automatically.
+        aspectRatio:
+          $ref: '#/components/schemas/AspectRatio'
+        visualStyle:
+          $ref: '#/components/schemas/WorkflowVisualStyle'
+        visualPacing:
+          $ref: '#/components/schemas/VisualPacing'
+        quality:
+          $ref: '#/components/schemas/ModelQuality'
+          description: Image generation quality tier for AI-generated visuals. Optional; when omitted, your account's Default AI quality for images is used (change it at https://app.videogen.io/settings/account). Only applies when `visualStyle.type` is AI_IMAGE; STOCK pulls existing footage and is unaffected.
+        language:
+          type: string
+          description: Output language as a BCP-47 code (e.g. `en`, `es`, `fr`). Defaults to English.
+        actorEntityId:
+          type:
+          - string
+          - 'null'
+          description: Recommended. Optional id of a built-in stock actor or an ACTOR entity (e.g. `vg_enti_...`) with an image reference. When set, narration is delivered by that actor avatar. Omit or pass `null` for voiceover without an avatar.
+        avatarQuality:
+          $ref: '#/components/schemas/ModelQuality'
+          description: Avatar generation quality tier. Applies when `actorEntityId` is provided. Optional; when omitted, your account's Default AI quality for avatars is used.
+        captionStyle:
+          description: Caption styling. Omit to use the default style with captions shown. Pass an object to override individual style fields (any omitted field uses the default). Pass `null` to hide captions entirely.
+          anyOf:
+          - $ref: '#/components/schemas/WorkflowCaptionStyle'
+          - type: 'null'
+        logoFileId:
+          type:
+          - string
+          - 'null'
+          description: Optional file id of an uploaded logo image to overlay on the video (e.g. `vg_file_...`). Upload the image first via `POST /v1/files/upload`. Only image files are accepted.
+        workflowAgentContext:
+          type: string
+          description: Optional production notes for the AI that builds the video — visual direction for how to illustrate the voiceover (e.g. on-screen code or text to display, specific b-roll to feature, or scene-by-scene staging). Never spoken; does not change the uploaded voiceover audio or its transcript.
+        remixActions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RemixAction'
+          description: Optional edits applied to the project after the video is built, in order. Each action runs asynchronously; the response returns one remix action id per action. Captions and a logo are set with the `captionStyle` and `logoFileId` request fields above; recommended remix actions here are `CONVERT_IMAGES_TO_VIDEOS` to animate still images into clips, and `ADD_TRANSITIONS` to stamp transitions between sections and assets. See the [Remix actions](/remix-actions) guide.
+        isOutputTemporary:
+          type: boolean
+          default: false
+          description: 'When true, the video''s generated OUTPUT files (AI images, video clips, voiceover audio, avatars) are created as temporary: guaranteed available for 24 hours, after which they may be archived and later deleted. This also covers files produced by post-build remix actions (e.g. generated background music, image-to-video conversions). Use this when your integration downloads or re-hosts the results itself and does not need VideoGen to retain them. The project and its metadata are unaffected. Defaults to false.'
+        hideFromUi:
+          type: boolean
+          default: false
+          description: When true, the project is hidden from Home and Projects by default, and generated files are hidden from the Media page. The project and files remain accessible through the API. Defaults to false.
+        autoExport:
+          type: boolean
+          default: false
+          description: When true, VideoGen exports an MP4 after the video is built (and after any `remixActions` on this request finish). The workflow run stays `running` until that export succeeds or fails. On success, poll `GET /v1/workflows/runs/{workflowRunId}` and use `downloadUrl`. Defaults to false.
+        exportOptions:
+          $ref: '#/components/schemas/ExportProjectRequest'
+          description: Export settings used when `autoExport` is true. Ignored when `autoExport` is false. Omitted fields use the same defaults as `POST /v1/projects/{projectId}/export`.
+    AspectRatio:
+      type: object
+      required:
+      - width
+      - height
+      description: Aspect ratio as a width:height pair (e.g. 16 and 9 for 16:9). Not pixel dimensions.
+      properties:
+        width:
+          type: integer
+          minimum: 1
+        height:
+          type: integer
+          minimum: 1
+    WorkflowCaptionBackgroundStyle:
+      type: object
+      required:
+      - type
+      - backgroundColor
+      description: Background drawn behind caption text.
+      properties:
+        type:
+          type: string
+          enum:
+          - RECT
+          - WRAPPED
+          - WORD_BY_WORD
+          description: RECT draws one rectangle behind the whole line; WRAPPED hugs the text; WORD_BY_WORD draws a box per word.
+        backgroundColor:
+          $ref: '#/components/schemas/WorkflowRgbColor'
+        borderRadiusProportion:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Corner rounding as a proportion of the background height, between 0 (square corners) and 1 (fully rounded).
+        opacityProportion:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Background opacity from 0 (transparent) to 1 (opaque).
+    RemixActionSetBackgroundMusic:
+      type: object
+      required:
+      - type
+      description: Set, replace, or remove the project's background music track.
+      properties:
+        type:
+          type: string
+          enum:
+          - SET_BACKGROUND_MUSIC
+        fileId:
+          type:
+          - string
+          - 'null'
+          description: File id of an uploaded audio file to use as background music (e.g. `vg_file_...`). Upload it first via `POST /v1/files/upload`. Pass `null` to remove the existing background music.
+        volume:
+          type:
+          - number
+          - 'null'
+          minimum: 0
+          maximum: 1
+          description: Music volume from 0 (silent) to 1 (full). Omit or pass `null` to keep the current volume.
+    SceneDescriptionRange:
+      type: object
+      required:
+      - startSeconds
+      - endSeconds
+      - description
+      description: A description of the visuals to show during an absolute time range of the finished video.
+      properties:
+        startSeconds:
+          type: number
+          minimum: 0
+          description: Start time of the range in seconds from the beginning of the video.
+        endSeconds:
+          type: number
+          description: End time of the range in seconds from the beginning of the video. Must be greater than `startSeconds`.
+        description:
+          type: string
+          description: What should be shown on screen during this range (e.g. the b-roll subject, on-screen text, or staging).
+    RemixActionDisableCaptions:
+      type: object
+      required:
+      - type
+      description: Hide captions on every captionable section.
+      properties:
+        type:
+          type: string
+          enum:
+          - DISABLE_CAPTIONS
+    RemixActionCleanUpTranscript:
+      type: object
+      required:
+      - type
+      description: Tighten every transcript in the project by removing silent pauses and/or filler words. Useful for polishing narration captured from raw recordings.
+      properties:
+        type:
+          type: string
+          enum:
+          - CLEAN_UP_TRANSCRIPT
+        removeFillers:
+          type:
+          - boolean
+          - 'null'
+          description: Remove filler words ("um", "uh", …). Defaults to `true`.
+        removePauses:
+          type:
+          - boolean
+          - 'null'
+          description: Remove silent pauses longer than `minPauseSeconds`. Defaults to `true`.
+        fillerWords:
+          type:
+          - array
+          - 'null'
+          items:
+            type: string
+          description: Override the filler-word list to remove. Omit or pass `null` to use the built-in defaults.
+        minPauseSeconds:
+          type:
+          - number
+          - 'null'
+          minimum: 0
+          description: Shortest pause (in seconds) to remove; pauses below this stay. Omit or pass `null` to use the default threshold.
+    WorkflowCaptionStyle:
+      type: object
+      description: Caption styling. Any omitted field falls back to the VideoGen default caption style. Provide an empty object (`{}`) to keep the default style but ensure captions are shown. Pass `null` for the whole `captionStyle` field to hide captions entirely.
+      properties:
+        fontName:
+          type: string
+          description: Font family name.
+        fontSize:
+          type: number
+          minimum: 1
+          description: Font size in pixels at 1080p. Must be greater than 0.
+        fontWeight:
+          type: integer
+          enum:
+          - 100
+          - 200
+          - 300
+          - 400
+          - 500
+          - 600
+          - 700
+          - 800
+          - 900
+          description: Numeric font weight (400 = regular, 700 = bold).
+        textColor:
+          $ref: '#/components/schemas/WorkflowRgbColor'
+        textJustification:
+          type: string
+          enum:
+          - LEFT
+          - CENTER
+          - RIGHT
+        verticalAlignment:
+          type: string
+          enum:
+          - TOP
+          - MIDDLE
+          - BOTTOM
+          description: Vertical position of the caption block in the frame.
+        strokeColor:
+          description: Outline color around glyphs, or null for no outline.
+          anyOf:
+          - $ref: '#/components/schemas/WorkflowRgbColor'
+          - type: 'null'
+        strokeWeight:
+          type: number
+          minimum: 0
+          description: Outline thickness in pixels. 0 disables the outline.
+        backgroundStyle:
+          description: Background drawn behind the text, or null for no background.
+          anyOf:
+          - $ref: '#/components/schemas/WorkflowCaptionBackgroundStyle'
+          - type: 'null'
+        spokenTextColor:
+          description: Color applied to the currently spoken word for karaoke-style highlighting, or null to keep the base text color.
+          anyOf:
+          - $ref: '#/components/schemas/WorkflowRgbColor'
+          - type: 'null'
+        spokenTextStrokeColor:
+          description: Outline color applied to the currently spoken word, or null.
+          anyOf:
+          - $ref: '#/components/schemas/WorkflowRgbColor'
+          - type: 'null'
+        persistSpokenTextColor:
+          type: boolean
+          description: When true, a word keeps the spoken-text color after it has been spoken instead of reverting.
+    WorkflowVisualStyle:
+      type: object
+      required:
+      - type
+      description: Visual style for the generated b-roll.
+      properties:
+        type:
+          type: string
+          enum:
+          - STOCK
+          - AI_IMAGE
+          description: STOCK pulls stock footage and images. AI_IMAGE generates a styled image for each section. Pass `entityId` to match a saved visual-style entity, or `aiStyle` for a free-form look.
+        aiStyle:
+          type: string
+          description: 'Only applies when type is AI_IMAGE and `entityId` is omitted. A full, strict paragraph for the look of every generated image (medium, texture, palette, then composition). Do not pass a short label such as `watercolor`. Image models pack the frame with text, charts, diagrams, and extra objects unless the style forbids that. Keep the picture simple: one uncluttered subject in the middle half of the frame, empty margins, and no on-image text or diagrams unless you asked for one specific word or number. Copy a full description from the AI styles reference. Example: `Loose watercolor illustration, visible brushstrokes, soft color bleeds, paper texture, muted palette. A clear uncluttered subject centered in the frame, occupying only the middle half of the image, with generous empty margins on all four sides, no background clutter. No on-image text, letters, labels, captions, charts, diagrams, tables, legends, or infographic layout.` Required when type is AI_IMAGE and `entityId` is omitted.'
+        entityId:
+          type: string
+          description: Only applies when type is AI_IMAGE. The id of a VISUAL_STYLE entity (e.g. `vg_enti_...`) whose reference images guide every generated image. When set, generated images match that entity instead of `aiStyle`.
+        restyleFeaturedBRollWithAiStyle:
+          type: boolean
+          default: true
+          description: Only applies when type is AI_IMAGE. When true, featured b-roll images you provide are re-rendered in the chosen style so they match the generated look (no effect on featured b-roll videos). Defaults to true.
     RemixActionResizeProject:
       type: object
       required:
@@ -556,106 +659,95 @@ components:
           - RESIZE_PROJECT
         aspectRatio:
           $ref: '#/components/schemas/AspectRatio'
-    ExportProjectRequest:
+    RemixActionAddTransitions:
       type: object
-      properties:
-        quality:
-          $ref: '#/components/schemas/ExportProjectQuality'
-        watermarkMode:
-          $ref: '#/components/schemas/WatermarkMode'
-        endScreenMode:
-          $ref: '#/components/schemas/EndScreenMode'
-        deliveryDestinations:
-          type: array
-          description: Destinations to deliver the finished export to when it completes, in addition to any delivery destinations already saved for the team. Each destination references a connected integration.
-          items:
-            $ref: '#/components/schemas/ExportDeliveryDestination'
-    WorkflowRunListResponse:
-      type: object
-      description: Paginated list of API-started workflow runs, most recently created first.
-      required:
-      - workflowRuns
-      - hasMore
-      - nextCursor
-      properties:
-        workflowRuns:
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkflowRun'
-        hasMore:
-          type: boolean
-          description: When true, there are more runs available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
-        nextCursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
-    EndScreenMode:
-      type: string
-      enum:
-      - NONE
-      - VIDEO_GEN
-      - AUTO
-      default: AUTO
-      description: Controls whether a short 'Made with VideoGen' end screen is appended to the output. `AUTO` appends it unless you have a Pro plan. `VIDEO_GEN` always appends it. `NONE` removes it (requires Pro; returns an error if you don't have it).
-    StartWorkflowRunResponse:
-      type: object
-      description: 'Returned when a workflow run is accepted. Poll `GET /v1/workflows/runs/{workflowRunId}` or subscribe to webhooks for completion. When the start request set `autoExport: true`, wait until `status` is `succeeded` and use `downloadUrl`.'
-      required:
-      - workflowRunId
-      - projectId
-      - projectUrl
-      - remixActionIds
-      properties:
-        workflowRunId:
-          type: string
-          description: Opaque workflow run id (e.g. `vg_work_...`).
-        projectId:
-          type: string
-          description: Id of the project created for this workflow run (e.g. `vg_proj_...`).
-        projectUrl:
-          type: string
-          format: uri
-          description: 'Deep link to open this project in the VideoGen web editor. Not required for an API-only integration: store `projectId` and use the Projects API (export, remix, metadata). Use `projectUrl` when a person should open the project in the app to review or edit it manually. The project is visible only to members of your team and any project collaborators, the same access model as a project created in the dashboard.'
-        remixActionIds:
-          type: array
-          items:
-            type: string
-          description: Opaque remix action ids (e.g. `vg_rmix_...`), one per `remixActions` entry in request order. Empty when no remix actions were requested. Each runs after the video is built; poll `GET /v1/projects/{projectId}/remix-actions`.
-    ErrorRequirement:
-      type: object
-      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
       required:
       - type
+      description: 'Stamp transitions across the project. Not per-boundary: each field you set is applied uniformly to every boundary in that scope, replacing any transition already there. Set the transition between sections, between base-layer assets, or both; omit or pass `null` for a scope to leave its transitions untouched.'
       properties:
         type:
           type: string
-          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
-        details:
-          type: object
-          additionalProperties:
-            type: string
-          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
-    WorkflowRgbColor:
+          enum:
+          - ADD_TRANSITIONS
+        sectionTransition:
+          description: Transition applied at every boundary between sections, replacing any existing section transitions. Omit or pass `null` to leave section transitions untouched.
+          anyOf:
+          - $ref: '#/components/schemas/RemixTransitionStyle'
+          - type: 'null'
+        assetTransition:
+          description: Transition applied at every boundary between base-layer assets within sections, replacing any existing asset transitions. Omit or pass `null` to leave asset transitions untouched.
+          anyOf:
+          - $ref: '#/components/schemas/RemixTransitionStyle'
+          - type: 'null'
+    SlideshowToVideoRequest:
       type: object
       required:
-      - red
-      - green
-      - blue
-      description: An RGB color. Each channel is an integer from 0 to 255.
+      - fileId
       properties:
-        red:
-          type: integer
-          minimum: 0
-          maximum: 255
-        green:
-          type: integer
-          minimum: 0
-          maximum: 255
-        blue:
-          type: integer
-          minimum: 0
-          maximum: 255
+        fileId:
+          type: string
+          description: Opaque file id of an uploaded PDF or PowerPoint file (e.g. `vg_file_...`). Upload the file first via `POST /v1/files/upload`.
+        slideScripts:
+          type: array
+          items:
+            type: string
+          description: 'Optional per-slide narration, in slide order, applied by index: each slide uses its matching entry, and an empty string makes that slide silent. If you provide fewer entries than slides, the remaining slides are silent; extra entries are ignored. Omit this field entirely to narrate each slide from its speaker notes in the uploaded file. To guarantee no narration on any slide, pass an empty array.'
+        aspectRatio:
+          $ref: '#/components/schemas/AspectRatio'
+        language:
+          type: string
+          description: Output language as a BCP-47 code (e.g. `en`, `es`, `fr`). Defaults to English.
+        voiceId:
+          type:
+          - string
+          - 'null'
+          description: Catalog `displayName` (e.g. `Matilda`) or voice id from `GET /v1/resources/tts-voices` (e.g. `vg_voic_...`). A default voice is used when omitted. Any voice may be used here, including voices where `supportsDirectToolExecution` is false.
+        voiceSpeed:
+          type: number
+          minimum: 0.5
+          maximum: 2
+          description: Speech rate multiplier, between 0.5 (half speed) and 2 (double speed). Defaults to the voice's default speed.
+        actorEntityId:
+          type:
+          - string
+          - 'null'
+          description: Recommended. Optional id of a built-in stock actor or an ACTOR entity (e.g. `vg_enti_...`) with an image reference. When set, narration is delivered by that actor avatar. Omit or pass `null` for voiceover without an avatar.
+        avatarQuality:
+          $ref: '#/components/schemas/ModelQuality'
+          description: Avatar generation quality tier. Applies when `actorEntityId` is provided. Optional; when omitted, your account's Default AI quality for avatars is used.
+        slideshowThemeEntityId:
+          type: string
+          description: Optional id of a SLIDESHOW_THEME entity (e.g. `vg_enti_...`) whose reference board defines the shared slide design system (fonts, colors, layout) applied to generated or edited slides. Create one via `POST /v1/entities` with `entityType` SLIDESHOW_THEME and attach a reference image or a PDF / PowerPoint. Omit when converting an uploaded deck's original pages into a video; VideoGen derives a theme from those pages in the background so later edits can match the original slides.
+        captionStyle:
+          description: Caption styling. Omit to use the default style with captions shown. Pass an object to override individual style fields (any omitted field uses the default). Pass `null` to hide captions entirely.
+          anyOf:
+          - $ref: '#/components/schemas/WorkflowCaptionStyle'
+          - type: 'null'
+        logoFileId:
+          type:
+          - string
+          - 'null'
+          description: Optional file id of an uploaded logo image to overlay on the video (e.g. `vg_file_...`). Upload the image first via `POST /v1/files/upload`. Only image files are accepted.
+        remixActions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RemixAction'
+          description: Optional edits applied to the project after the video is built, in order. Each action runs asynchronously; the response returns one remix action id per action. Captions and a logo are set with the `captionStyle` and `logoFileId` request fields above; recommended remix actions here are `CONVERT_IMAGES_TO_VIDEOS` to animate still images into clips, and `ADD_TRANSITIONS` to stamp transitions between sections and assets. See the [Remix actions](/remix-actions) guide.
+        isOutputTemporary:
+          type: boolean
+          default: false
+          description: 'When true, the video''s generated OUTPUT files (AI images, video clips, voiceover audio, avatars) are created as temporary: guaranteed available for 24 hours, after which they may be archived and later deleted. This also covers files produced by post-build remix actions (e.g. generated background music, image-to-video conversions). Use this when your integration downloads or re-hosts the results itself and does not need VideoGen to retain them. The project and its metadata are unaffected. Defaults to false.'
+        hideFromUi:
+          type: boolean
+          default: false
+          description: When true, the project is hidden from Home and Projects by default, and generated files are hidden from the Media page. The project and files remain accessible through the API. Defaults to false.
+        autoExport:
+          type: boolean
+          default: false
+          description: When true, VideoGen exports an MP4 after the video is built (and after any `remixActions` on this request finish). The workflow run stays `running` until that export succeeds or fails. On success, poll `GET /v1/workflows/runs/{workflowRunId}` and use `downloadUrl`. Defaults to false.
+        exportOptions:
+          $ref: '#/components/schemas/ExportProjectRequest'
+          description: Export settings used when `autoExport` is true. Ignored when `autoExport` is false. Omitted fields use the same defaults as `POST /v1/projects/{projectId}/export`.
     RemixActionSetLogo:
       type: object
       required:
@@ -689,107 +781,172 @@ components:
           - number
           - 'null'
           description: Logo width as a percentage of the video width. Omit or pass `null` to keep the current size.
-    RemixTransitionStyle:
-      type: string
-      description: A transition applied at a boundary. `DYNAMIC` auto-varies the style across boundaries; `NONE` removes transitions; the rest apply that fixed style everywhere.
-      enum:
-      - DYNAMIC
-      - NONE
-      - FADE
-      - RISE
-      - PAN
-      - POP
-      - WIPE
-    RemixActionChangeNarrator:
+    RemixActionAddZoom:
       type: object
       required:
       - type
-      - voiceId
-      description: 'Re-narrate every AI-voiceover asset in the project with a new voice and optional actor avatar, replacing each narration in place. Runs asynchronously: text-to-speech is re-fired per asset with the original narration text. If the project has no AI-narrated assets, the action is skipped and completes successfully without changing anything.'
+      description: Apply a Ken Burns zoom to every eligible still image in the project, including uploaded images. Replaces any existing still-image effect on those assets. If the project has no eligible stills, the action is skipped and completes successfully without changing anything.
       properties:
         type:
           type: string
           enum:
-          - CHANGE_NARRATOR
-        voiceId:
+          - ADD_ZOOM
+    ExportProjectRequest:
+      type: object
+      properties:
+        quality:
+          $ref: '#/components/schemas/ExportProjectQuality'
+        watermarkMode:
+          $ref: '#/components/schemas/WatermarkMode'
+        endScreenMode:
+          $ref: '#/components/schemas/EndScreenMode'
+        deliveryDestinations:
+          type: array
+          description: Destinations to deliver the finished export to when it completes, in addition to any delivery destinations already saved for the team. Each destination references a connected integration.
+          items:
+            $ref: '#/components/schemas/ExportDeliveryDestination'
+    RemixActionConvertImagesToVideos:
+      type: object
+      required:
+      - type
+      description: 'Animate every eligible still image in the project into a short AI video clip (image-to-video), replacing each image in place. Eligible images are non-SVG image assets backed by an uploaded or stock file. Runs asynchronously: one clip is generated per image. If the project has no eligible images, the action is skipped and completes successfully without changing anything (for example, a project whose timeline is already all video clips).'
+      properties:
+        type:
           type: string
-          description: Catalog `displayName` (e.g. `Matilda`) or voice id from `GET /v1/resources/tts-voices` (e.g. `vg_voic_...`) to re-narrate with.
-        actorEntityId:
+          enum:
+          - CONVERT_IMAGES_TO_VIDEOS
+        motionPrompt:
           type:
           - string
           - 'null'
-          description: Recommended. Optional id of a built-in stock actor or an ACTOR entity (e.g. `vg_enti_...`) with an image reference. When set, narration is delivered by that actor avatar. Omit or pass `null` for voiceover without an avatar.
-        avatarQuality:
+          description: Describe the motion to apply to every image (e.g. "slow cinematic push-in"). Omit or pass `null` for automatic motion.
+        muteOutputVideos:
+          type:
+          - boolean
+          - 'null'
+          description: Mute the generated clips and suppress generated background music. Recommended when the clips sit behind a voiceover. Defaults to `true`.
+        quality:
           $ref: '#/components/schemas/ModelQuality'
-          description: Avatar generation quality tier. Applies when `actorEntityId` is provided. Optional; when omitted, your account's Default AI quality for avatars is used.
-        voiceSpeed:
-          type:
-          - number
-          - 'null'
-          minimum: 0.5
-          maximum: 2
-          description: Speech rate multiplier, between 0.5 (half speed) and 2 (double speed). Omit or pass `null` to keep each asset's current speed.
-    AspectRatio:
+          description: Video generation quality tier for the image-to-video conversions (`LOW`, `STANDARD`, `HIGH`, or `MAX`). Optional; when omitted, your account's Default AI quality for video is used (change it at https://app.videogen.io/settings/account).
+    RemixActionUpscaleAssets:
       type: object
       required:
-      - width
-      - height
-      description: Aspect ratio as a width:height pair (e.g. 16 and 9 for 16:9). Not pixel dimensions.
+      - type
+      description: 'Sharpen every eligible asset in the project up to 4K, replacing each in place. Runs asynchronously: one upscaled asset is generated per eligible asset. If the project has no eligible assets, the action is skipped and completes successfully without changing anything.'
       properties:
-        width:
-          type: integer
-          minimum: 1
-        height:
-          type: integer
-          minimum: 1
-    ApiError:
-      type: object
-      description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
-
-
-        - `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.
-
-
-        Common `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.
-
-        '
-      required:
-      - message
-      properties:
-        message:
+        type:
           type: string
-          description: Human-readable error description. For display and logging only; do not branch on its exact text.
-        code:
+          enum:
+          - UPSCALE_ASSETS
+        includeVideos:
           type:
-          - string
+          - boolean
           - 'null'
-          description: Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies.
-        requirement:
-          description: What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.
-          anyOf:
-          - $ref: '#/components/schemas/ErrorRequirement'
-          - type: 'null'
-        internalErrorCode:
+          description: Also upscale video assets (billed per output second). Defaults to `true`.
+        includeStockContent:
           type:
-          - string
+          - boolean
           - 'null'
-          description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
-    WatermarkMode:
+          description: Also upscale stock (library) assets, not just uploaded or generated ones. Defaults to `true`.
+    RemixAction:
+      description: A single edit applied to a project. Each array entry is exactly one of the action types below, chosen by its `type` field; the variants are mutually-exclusive options, not fields you must all provide. Include only the actions you want.
+      oneOf:
+      - $ref: '#/components/schemas/RemixActionSetBackgroundMusic'
+      - $ref: '#/components/schemas/RemixActionSetLogo'
+      - $ref: '#/components/schemas/RemixActionEnableCaptions'
+      - $ref: '#/components/schemas/RemixActionDisableCaptions'
+      - $ref: '#/components/schemas/RemixActionAddTransitions'
+      - $ref: '#/components/schemas/RemixActionAddZoom'
+      - $ref: '#/components/schemas/RemixActionResizeProject'
+      - $ref: '#/components/schemas/RemixActionCleanUpTranscript'
+      - $ref: '#/components/schemas/RemixActionConvertImagesToVideos'
+      - $ref: '#/components/schemas/RemixActionRegenerateImages'
+      - $ref: '#/components/schemas/RemixActionUpscaleAssets'
+      - $ref: '#/components/schemas/RemixActionChangeNarrator'
+      - $ref: '#/components/schemas/RemixActionShuffleStockVisuals'
+      - $ref: '#/components/schemas/RemixActionGenerateMusic'
+      - $ref: '#/components/schemas/RemixActionTranslateProject'
+      discriminator:
+        propertyName: type
+        mapping:
+          SET_BACKGROUND_MUSIC: '#/components/schemas/RemixActionSetBackgroundMusic'
+          SET_LOGO: '#/components/schemas/RemixActionSetLogo'
+          ENABLE_CAPTIONS: '#/components/schemas/RemixActionEnableCaptions'
+          DISABLE_CAPTIONS: '#/components/schemas/RemixActionDisableCaptions'
+          ADD_TRANSITIONS: '#/components/schemas/RemixActionAddTransitions'
+          ADD_ZOOM: '#/components/schemas/RemixActionAddZoom'
+          RESIZE_PROJECT: '#/components/schemas/RemixActionResizeProject'
+          CLEAN_UP_TRANSCRIPT: '#/components/schemas/RemixActionCleanUpTranscript'
+          CONVERT_IMAGES_TO_VIDEOS: '#/components/schemas/RemixActionConvertImagesToVideos'
+          REGENERATE_IMAGES: '#/components/schemas/RemixActionRegenerateImages'
+          UPSCALE_ASSETS: '#/components/schemas/RemixActionUpscaleAssets'
+          CHANGE_NARRATOR: '#/components/schemas/RemixActionChangeNarrator'
+          SHUFFLE_STOCK_VISUALS: '#/components/schemas/RemixActionShuffleStockVisuals'
+          GENERATE_MUSIC: '#/components/schemas/RemixActionGenerateMusic'
+          TRANSLATE_PROJECT: '#/components/schemas/RemixActionTranslateProject'
+    RemixActionRegenerateImages:
+      type: object
+      required:
+      - type
+      - stylePrompt
+      description: 'Restyle every eligible still image in the project to a new look (image-to-image), replacing each image in place. Eligible images are non-SVG image assets backed by an uploaded or generated file. Runs asynchronously: one restyled image is generated per eligible image. If the project has no eligible images, the action is skipped and completes successfully without changing anything.'
+      properties:
+        type:
+          type: string
+          enum:
+          - REGENERATE_IMAGES
+        stylePrompt:
+          type: string
+          description: 'A full, strict paragraph for the look of every image (medium, texture, palette, then composition). Do not pass a short label such as `watercolor painting`. Image models pack the frame with text, charts, diagrams, and extra objects unless the style forbids that. Keep the picture simple: one uncluttered subject in the middle half of the frame, empty margins, and no on-image text or diagrams unless you asked for one specific word or number.'
+        quality:
+          $ref: '#/components/schemas/ModelQuality'
+          description: Image generation quality tier for the restyled images. Optional; when omitted, your account's Default AI quality for images is used (change it at https://app.videogen.io/settings/account).
+    RemixActionTranslateProject:
+      type: object
+      required:
+      - type
+      - languageCode
+      description: 'Translate the whole project into another language: every piece of text (title, section names, on-screen text overlays, transcripts, and narration scripts) is translated, and — unless disabled — each AI voiceover is re-narrated in the new language. Runs asynchronously. Requires a Pro subscription. Retrieve the list of supported language codes from `GET /v1/resources/languages`.'
+      properties:
+        type:
+          type: string
+          enum:
+          - TRANSLATE_PROJECT
+        languageCode:
+          type: string
+          description: Target language code to translate the project into (e.g. `es`, `fr`, `ja`). Must be one of the codes returned by `GET /v1/resources/languages`.
+        changeVoice:
+          type:
+          - boolean
+          - 'null'
+          description: Swap each AI voiceover to a voice that natively matches the target language. Recommended, since keeping the original voice usually produces a foreign accent. Defaults to `true`.
+        translateImageText:
+          type:
+          - boolean
+          - 'null'
+          description: Also re-generate every eligible image so that text baked into the image is translated too (image-to-image). Billed per generated image. Defaults to `false`.
+    ErrorRequirement:
+      type: object
+      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
+    VisualPacing:
       type: string
       enum:
-      - NONE
-      - VIDEO_GEN
-      - AUTO
-      default: AUTO
-      description: Controls whether the VideoGen watermark is applied to the output. `AUTO` applies the watermark unless you have a Pro plan. `VIDEO_GEN` always applies it. `NONE` removes the watermark (requires Pro; returns an error if you don't have it).
-    ExportProjectQuality:
-      type: string
-      description: Vertical resolution tier for the rendered MP4.
-      enum:
-      - STANDARD
-      - HIGH
-      - FULL_HIGH
-      - ULTRA_HIGH
+      - FAST
+      - MEDIUM
+      - SLOW
+      default: MEDIUM
+      description: How quickly visuals change. FAST shows more, shorter shots; SLOW holds each visual longer. Defaults to MEDIUM.
     ScriptToVideoRequest:
       type: object
       required:
@@ -862,6 +1019,19 @@ components:
         exportOptions:
           $ref: '#/components/schemas/ExportProjectRequest'
           description: Export settings used when `autoExport` is true. Ignored when `autoExport` is false. Omitted fields use the same defaults as `POST /v1/projects/{projectId}/export`.
+    ModelQuality:
+      type: string
+      enum:
+      - LOW
+      - STANDARD
+      - HIGH
+      - MAX
+      description: 'AI generation quality tier, shared across every generative feature (image, video, text, and so on). `LOW` is fastest and cheapest, `STANDARD` balances quality and cost, `HIGH` is higher quality, and `MAX` is the highest quality.
+
+
+        When a request omits the quality field, VideoGen falls back to your account''s **Default AI quality** for that feature, which you can change at [Account settings](https://app.videogen.io/settings/account). Not every feature supports every tier; unsupported tiers are rejected with an error (see each field''s description).
+
+        '
     ExportDeliveryDestination:
       type: object
       required:
@@ -887,6 +1057,157 @@ components:
           - string
           - 'null'
           description: Target folder id. Required when `type` is `GOOGLE_DRIVE_FOLDER`.
+    EndScreenMode:
+      type: string
+      enum:
+      - NONE
+      - VIDEO_GEN
+      - AUTO
+      default: AUTO
+      description: Controls whether a short 'Made with VideoGen' end screen is appended to the output. `AUTO` appends it unless you have a Pro plan. `VIDEO_GEN` always appends it. `NONE` removes it (requires Pro; returns an error if you don't have it).
+    WorkflowRunListResponse:
+      type: object
+      description: Paginated list of API-started workflow runs, most recently created first.
+      required:
+      - workflowRuns
+      - hasMore
+      - nextCursor
+      properties:
+        workflowRuns:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowRun'
+        hasMore:
+          type: boolean
+          description: When true, there are more runs available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
+        nextCursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
+    PromptToVideoClipRequest:
+      type: object
+      required:
+      - prompt
+      description: Creates a project from a text prompt and generates one short AI video clip. VideoGen generates an opening frame from the prompt (optionally guided by reference images), then animates that frame into a video inside an editable project. This workflow does not accept `remixActions`. For a standalone clip without a project, use `POST /v1/tools/generate-video-clip`. For longer narrated multi-scene videos, use `POST /v1/workflows/script-to-video`.
+      properties:
+        prompt:
+          type: string
+          description: Text prompt describing the video to generate (e.g. `A golden retriever running through a sunlit meadow in slow motion, cinematic`).
+        imageFileIds:
+          type: array
+          items:
+            type: string
+          maxItems: 4
+          description: Optional ids of previously uploaded reference images (e.g. `vg_file_...`) that guide the opening frame. Upload files via `POST /v1/files/upload` first.
+        durationSeconds:
+          type: integer
+          minimum: 1
+          maximum: 30
+          description: Desired clip length in whole seconds (1 to 30). Defaults to 10. The generated clip is clamped to the selected quality's supported range.
+        aspectRatio:
+          $ref: '#/components/schemas/AspectRatio'
+          description: Aspect ratio for the generated video. Defaults to 16:9 when omitted.
+        quality:
+          $ref: '#/components/schemas/ModelQuality'
+          description: Video generation quality tier (`LOW`, `STANDARD`, `HIGH`, or `MAX`). Also used for the opening-frame image. Optional; when omitted, your account's Default AI quality for video is used (change it at https://app.videogen.io/settings/account).
+        isOutputTemporary:
+          type: boolean
+          default: false
+          description: 'When true, the generated OUTPUT files (the opening-frame image and the video clip) are created as temporary: guaranteed available for 24 hours, after which they may be archived and later deleted. Use this when your integration downloads or re-hosts the results itself and does not need VideoGen to retain them. The project and its metadata are unaffected. Defaults to false.'
+        hideFromUi:
+          type: boolean
+          default: false
+          description: When true, the project is hidden from Home and Projects by default, and generated files are hidden from the Media page. The project and files remain accessible through the API. Defaults to false.
+        autoExport:
+          type: boolean
+          default: false
+          description: When true, VideoGen exports an MP4 after the video is built (and after any `remixActions` on this request finish). The workflow run stays `running` until that export succeeds or fails. On success, poll `GET /v1/workflows/runs/{workflowRunId}` and use `downloadUrl`. Defaults to false.
+        exportOptions:
+          $ref: '#/components/schemas/ExportProjectRequest'
+          description: Export settings used when `autoExport` is true. Ignored when `autoExport` is false. Omitted fields use the same defaults as `POST /v1/projects/{projectId}/export`.
+    RemixTransitionStyle:
+      type: string
+      description: A transition applied at a boundary. `DYNAMIC` auto-varies the style across boundaries; `NONE` removes transitions; the rest apply that fixed style everywhere.
+      enum:
+      - DYNAMIC
+      - NONE
+      - FADE
+      - RISE
+      - PAN
+      - POP
+      - WIPE
+    RemixActionChangeNarrator:
+      type: object
+      required:
+      - type
+      - voiceId
+      description: 'Re-narrate every AI-voiceover asset in the project with a new voice and optional actor avatar, replacing each narration in place. Runs asynchronously: text-to-speech is re-fired per asset with the original narration text. If the project has no AI-narrated assets, the action is skipped and completes successfully without changing anything.'
+      properties:
+        type:
+          type: string
+          enum:
+          - CHANGE_NARRATOR
+        voiceId:
+          type: string
+          description: Catalog `displayName` (e.g. `Matilda`) or voice id from `GET /v1/resources/tts-voices` (e.g. `vg_voic_...`) to re-narrate with.
+        actorEntityId:
+          type:
+          - string
+          - 'null'
+          description: Recommended. Optional id of a built-in stock actor or an ACTOR entity (e.g. `vg_enti_...`) with an image reference. When set, narration is delivered by that actor avatar. Omit or pass `null` for voiceover without an avatar.
+        avatarQuality:
+          $ref: '#/components/schemas/ModelQuality'
+          description: Avatar generation quality tier. Applies when `actorEntityId` is provided. Optional; when omitted, your account's Default AI quality for avatars is used.
+        voiceSpeed:
+          type:
+          - number
+          - 'null'
+          minimum: 0.5
+          maximum: 2
+          description: Speech rate multiplier, between 0.5 (half speed) and 2 (double speed). Omit or pass `null` to keep each asset's current speed.
+    RemixActionShuffleStockVisuals:
+      type: object
+      required:
+      - type
+      description: 'Replace every stock (library) visual in the project with a fresh alternative from the same search, replacing each in place. Runs asynchronously: each stock asset''s original search is re-run, excluding the currently-shown result. If the project has no shuffleable stock visuals, the action is skipped and completes successfully without changing anything.'
+      properties:
+        type:
+          type: string
+          enum:
+          - SHUFFLE_STOCK_VISUALS
+    ApiError:
+      type: object
+      description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
+
+
+        - `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.
+
+
+        Common `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.
+
+        '
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          description: Human-readable error description. For display and logging only; do not branch on its exact text.
+        code:
+          type:
+          - string
+          - 'null'
+          description: Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies.
+        requirement:
+          description: What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.
+          anyOf:
+          - $ref: '#/components/schemas/ErrorRequirement'
+          - type: 'null'
+        internalErrorCode:
+          type:
+          - string
+          - 'null'
+          description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
     RemixActionGenerateMusic:
       type: object
       required:
@@ -901,328 +1222,22 @@ components:
         prompt:
           type: string
           description: Describe the music to generate (e.g. "upbeat corporate background music with a driving beat").
-    SceneDescriptionRange:
-      type: object
-      required:
-      - startSeconds
-      - endSeconds
-      - description
-      description: A description of the visuals to show during an absolute time range of the finished video.
-      properties:
-        startSeconds:
-          type: number
-          minimum: 0
-          description: Start time of the range in seconds from the beginning of the video.
-        endSeconds:
-          type: number
-          description: End time of the range in seconds from the beginning of the video. Must be greater than `startSeconds`.
-        description:
-          type: string
-          description: What should be shown on screen during this range (e.g. the b-roll subject, on-screen text, or staging).
-    RemixActionConvertImagesToVideos:
-      type: object
-      required:
-      - type
-      description: 'Animate every eligible still image in the project into a short AI video clip (image-to-video), replacing each image in place. Eligible images are non-SVG image assets backed by an uploaded or stock file. Runs asynchronously: one clip is generated per image. If the project has no eligible images, the action is skipped and completes successfully without changing anything (for example, a project whose timeline is already all video clips).'
-      properties:
-        type:
-          type: string
-          enum:
-          - CONVERT_IMAGES_TO_VIDEOS
-        motionPrompt:
-          type:
-          - string
-          - 'null'
-          description: Describe the motion to apply to every image (e.g. "slow cinematic push-in"). Omit or pass `null` for automatic motion.
-        muteOutputVideos:
-          type:
-          - boolean
-          - 'null'
-          description: Mute the generated clips and suppress generated background music. Recommended when the clips sit behind a voiceover. Defaults to `true`.
-        quality:
-          $ref: '#/components/schemas/ModelQuality'
-          description: Video generation quality tier for the image-to-video conversions (`LOW`, `STANDARD`, `HIGH`, or `MAX`). Optional; when omitted, your account's Default AI quality for video is used (change it at https://app.videogen.io/settings/account).
-    SlideshowToVideoRequest:
-      type: object
-      required:
-      - fileId
-      properties:
-        fileId:
-          type: string
-          description: Opaque file id of an uploaded PDF or PowerPoint file (e.g. `vg_file_...`). Upload the file first via `POST /v1/files/upload`.
-        slideScripts:
-          type: array
-          items:
-            type: string
-          description: 'Optional per-slide narration, in slide order, applied by index: each slide uses its matching entry, and an empty string makes that slide silent. If you provide fewer entries than slides, the remaining slides are silent; extra entries are ignored. Omit this field entirely to narrate each slide from its speaker notes in the uploaded file. To guarantee no narration on any slide, pass an empty array.'
-        aspectRatio:
-          $ref: '#/components/schemas/AspectRatio'
-        language:
-          type: string
-          description: Output language as a BCP-47 code (e.g. `en`, `es`, `fr`). Defaults to English.
-        voiceId:
-          type:
-          - string
-          - 'null'
-          description: Catalog `displayName` (e.g. `Matilda`) or voice id from `GET /v1/resources/tts-voices` (e.g. `vg_voic_...`). A default voice is used when omitted. Any voice may be used here, including voices where `supportsDirectToolExecution` is false.
-        voiceSpeed:
-          type: number
-          minimum: 0.5
-          maximum: 2
-          description: Speech rate multiplier, between 0.5 (half speed) and 2 (double speed). Defaults to the voice's default speed.
-        actorEntityId:
-          type:
-          - string
-          - 'null'
-          description: Recommended. Optional id of a built-in stock actor or an ACTOR entity (e.g. `vg_enti_...`) with an image reference. When set, narration is delivered by that actor avatar. Omit or pass `null` for voiceover without an avatar.
-        avatarQuality:
-          $ref: '#/components/schemas/ModelQuality'
-          description: Avatar generation quality tier. Applies when `actorEntityId` is provided. Optional; when omitted, your account's Default AI quality for avatars is used.
-        slideshowThemeEntityId:
-          type: string
-          description: Optional id of a SLIDESHOW_THEME entity (e.g. `vg_enti_...`) whose reference board defines the shared slide design system (fonts, colors, layout) applied to generated or edited slides. Create one via `POST /v1/entities` with `entityType` SLIDESHOW_THEME and attach a reference image or a PDF / PowerPoint. Omit when converting an uploaded deck's original pages into a video; VideoGen derives a theme from those pages in the background so later edits can match the original slides.
-        captionStyle:
-          description: Caption styling. Omit to use the default style with captions shown. Pass an object to override individual style fields (any omitted field uses the default). Pass `null` to hide captions entirely.
-          anyOf:
-          - $ref: '#/components/schemas/WorkflowCaptionStyle'
-          - type: 'null'
-        logoFileId:
-          type:
-          - string
-          - 'null'
-          description: Optional file id of an uploaded logo image to overlay on the video (e.g. `vg_file_...`). Upload the image first via `POST /v1/files/upload`. Only image files are accepted.
-        remixActions:
-          type: array
-          items:
-            $ref: '#/components/schemas/RemixAction'
-          description: Optional edits applied to the project after the video is built, in order. Each action runs asynchronously; the response returns one remix action id per action. Captions and a logo are set with the `captionStyle` and `logoFileId` request fields above; recommended remix actions here are `CONVERT_IMAGES_TO_VIDEOS` to animate still images into clips, and `ADD_TRANSITIONS` to stamp transitions between sections and assets. See the [Remix actions](/remix-actions) guide.
-        isOutputTemporary:
-          type: boolean
-          default: false
-          description: 'When true, the video''s generated OUTPUT files (AI images, video clips, voiceover audio, avatars) are created as temporary: guaranteed available for 24 hours, after which they may be archived and later deleted. This also covers files produced by post-build remix actions (e.g. generated background music, image-to-video conversions). Use this when your integration downloads or re-hosts the results itself and does not need VideoGen to retain them. The project and its metadata are unaffected. Defaults to false.'
-        hideFromUi:
-          type: boolean
-          default: false
-          description: When true, the project is hidden from Home and Projects by default, and generated files are hidden from the Media page. The project and files remain accessible through the API. Defaults to false.
-        autoExport:
-          type: boolean
-          default: false
-          description: When true, VideoGen exports an MP4 after the video is built (and after any `remixActions` on this request finish). The workflow run stays `running` until that export succeeds or fails. On success, poll `GET /v1/workflows/runs/{workflowRunId}` and use `downloadUrl`. Defaults to false.
-        exportOptions:
-          $ref: '#/components/schemas/ExportProjectRequest'
-          description: Export settings used when `autoExport` is true. Ignored when `autoExport` is false. Omitted fields use the same defaults as `POST /v1/projects/{projectId}/export`.
-    WorkflowVisualStyle:
-      type: object
-      required:
-      - type
-      description: Visual style for the generated b-roll.
-      properties:
-        type:
-          type: string
-          enum:
-          - STOCK
-          - AI_IMAGE
-          description: STOCK pulls stock footage and images. AI_IMAGE generates a styled image for each section. Pass `entityId` to match a saved visual-style entity, or `aiStyle` for a free-form look.
-        aiStyle:
-          type: string
-          description: 'Only applies when type is AI_IMAGE and `entityId` is omitted. A full, strict paragraph for the look of every generated image (medium, texture, palette, then composition). Do not pass a short label such as `watercolor`. Image models pack the frame with text, charts, diagrams, and extra objects unless the style forbids that. Keep the picture simple: one uncluttered subject in the middle half of the frame, empty margins, and no on-image text or diagrams unless you asked for one specific word or number. Copy a full description from the AI styles reference. Example: `Loose watercolor illustration, visible brushstrokes, soft color bleeds, paper texture, muted palette. A clear uncluttered subject centered in the frame, occupying only the middle half of the image, with generous empty margins on all four sides, no background clutter. No on-image text, letters, labels, captions, charts, diagrams, tables, legends, or infographic layout.` Required when type is AI_IMAGE and `entityId` is omitted.'
-        entityId:
-          type: string
-          description: Only applies when type is AI_IMAGE. The id of a VISUAL_STYLE entity (e.g. `vg_enti_...`) whose reference images guide every generated image. When set, generated images match that entity instead of `aiStyle`.
-        restyleFeaturedBRollWithAiStyle:
-          type: boolean
-          default: true
-          description: Only applies when type is AI_IMAGE. When true, featured b-roll images you provide are re-rendered in the chosen style so they match the generated look (no effect on featured b-roll videos). Defaults to true.
-    RemixActionDisableCaptions:
-      type: object
-      required:
-      - type
-      description: Hide captions on every captionable section.
-      properties:
-        type:
-          type: string
-          enum:
-          - DISABLE_CAPTIONS
-    RemixActionSetBackgroundMusic:
-      type: object
-      required:
-      - type
-      description: Set, replace, or remove the project's background music track.
-      properties:
-        type:
-          type: string
-          enum:
-          - SET_BACKGROUND_MUSIC
-        fileId:
-          type:
-          - string
-          - 'null'
-          description: File id of an uploaded audio file to use as background music (e.g. `vg_file_...`). Upload it first via `POST /v1/files/upload`. Pass `null` to remove the existing background music.
-        volume:
-          type:
-          - number
-          - 'null'
-          minimum: 0
-          maximum: 1
-          description: Music volume from 0 (silent) to 1 (full). Omit or pass `null` to keep the current volume.
-    RemixActionEnableCaptions:
-      type: object
-      required:
-      - type
-      description: Show captions on every captionable section. Optionally override the project caption style.
-      properties:
-        type:
-          type: string
-          enum:
-          - ENABLE_CAPTIONS
-        captionStyle:
-          description: Caption styling to apply. Omit or pass `null` to show captions with the current style. Any provided field overrides that field; omitted fields keep their current value.
-          anyOf:
-          - $ref: '#/components/schemas/WorkflowCaptionStyle'
-          - type: 'null'
-    WorkflowCaptionStyle:
-      type: object
-      description: Caption styling. Any omitted field falls back to the VideoGen default caption style. Provide an empty object (`{}`) to keep the default style but ensure captions are shown. Pass `null` for the whole `captionStyle` field to hide captions entirely.
-      properties:
-        fontName:
-          type: string
-          description: Font family name.
-        fontSize:
-          type: number
-          minimum: 1
-          description: Font size in pixels at 1080p. Must be greater than 0.
-        fontWeight:
-          type: integer
-          enum:
-          - 100
-          - 200
-          - 300
-          - 400
-          - 500
-          - 600
-          - 700
-          - 800
-          - 900
-          description: Numeric font weight (400 = regular, 700 = bold).
-        textColor:
-          $ref: '#/components/schemas/WorkflowRgbColor'
-        textJustification:
-          type: string
-          enum:
-          - LEFT
-          - CENTER
-          - RIGHT
-        verticalAlignment:
-          type: string
-          enum:
-          - TOP
-          - MIDDLE
-          - BOTTOM
-          description: Vertical position of the caption block in the frame.
-        strokeColor:
-          description: Outline color around glyphs, or null for no outline.
-          anyOf:
-          - $ref: '#/components/schemas/WorkflowRgbColor'
-          - type: 'null'
-        strokeWeight:
-          type: number
-          minimum: 0
-          description: Outline thickness in pixels. 0 disables the outline.
-        backgroundStyle:
-          description: Background drawn behind the text, or null for no background.
-          anyOf:
-          - $ref: '#/components/schemas/WorkflowCaptionBackgroundStyle'
-          - type: 'null'
-        spokenTextColor:
-          description: Color applied to the currently spoken word for karaoke-style highlighting, or null to keep the base text color.
-          anyOf:
-          - $ref: '#/components/schemas/WorkflowRgbColor'
-          - type: 'null'
-        spokenTextStrokeColor:
-          description: Outline color applied to the currently spoken word, or null.
-          anyOf:
-          - $ref: '#/components/schemas/WorkflowRgbColor'
-          - type: 'null'
-        persistSpokenTextColor:
-          type: boolean
-          description: When true, a word keeps the spoken-text color after it has been spoken instead of reverting.
-    VoiceoverToVideoRequest:
-      type: object
-      required:
-      - fileId
-      - visualStyle
-      properties:
-        fileId:
-          type: string
-          description: Opaque file id of an uploaded voiceover audio file (e.g. `vg_file_...`). Upload the file first via `POST /v1/files/upload`. Attach a pre-computed transcript at upload time (via the `transcript` field on `POST /v1/files/upload`) to skip re-transcription.
-        scenes:
-          type: array
-          items:
-            $ref: '#/components/schemas/SceneDescriptionRange'
-          description: Optional timed scene descriptions guiding what to show on screen during each absolute time range of the video. Ranges must be sorted by `startSeconds` and non-overlapping. Omit to let the workflow choose visuals automatically.
-        aspectRatio:
-          $ref: '#/components/schemas/AspectRatio'
-        visualStyle:
-          $ref: '#/components/schemas/WorkflowVisualStyle'
-        visualPacing:
-          $ref: '#/components/schemas/VisualPacing'
-        quality:
-          $ref: '#/components/schemas/ModelQuality'
-          description: Image generation quality tier for AI-generated visuals. Optional; when omitted, your account's Default AI quality for images is used (change it at https://app.videogen.io/settings/account). Only applies when `visualStyle.type` is AI_IMAGE; STOCK pulls existing footage and is unaffected.
-        language:
-          type: string
-          description: Output language as a BCP-47 code (e.g. `en`, `es`, `fr`). Defaults to English.
-        actorEntityId:
-          type:
-          - string
-          - 'null'
-          description: Recommended. Optional id of a built-in stock actor or an ACTOR entity (e.g. `vg_enti_...`) with an image reference. When set, narration is delivered by that actor avatar. Omit or pass `null` for voiceover without an avatar.
-        avatarQuality:
-          $ref: '#/components/schemas/ModelQuality'
-          description: Avatar generation quality tier. Applies when `actorEntityId` is provided. Optional; when omitted, your account's Default AI quality for avatars is used.
-        captionStyle:
-          description: Caption styling. Omit to use the default style with captions shown. Pass an object to override individual style fields (any omitted field uses the default). Pass `null` to hide captions entirely.
-          anyOf:
-          - $ref: '#/components/schemas/WorkflowCaptionStyle'
-          - type: 'null'
-        logoFileId:
-          type:
-          - string
-          - 'null'
-          description: Optional file id of an uploaded logo image to overlay on the video (e.g. `vg_file_...`). Upload the image first via `POST /v1/files/upload`. Only image files are accepted.
-        workflowAgentContext:
-          type: string
-          description: Optional production notes for the AI that builds the video — visual direction for how to illustrate the voiceover (e.g. on-screen code or text to display, specific b-roll to feature, or scene-by-scene staging). Never spoken; does not change the uploaded voiceover audio or its transcript.
-        remixActions:
-          type: array
-          items:
-            $ref: '#/components/schemas/RemixAction'
-          description: Optional edits applied to the project after the video is built, in order. Each action runs asynchronously; the response returns one remix action id per action. Captions and a logo are set with the `captionStyle` and `logoFileId` request fields above; recommended remix actions here are `CONVERT_IMAGES_TO_VIDEOS` to animate still images into clips, and `ADD_TRANSITIONS` to stamp transitions between sections and assets. See the [Remix actions](/remix-actions) guide.
-        isOutputTemporary:
-          type: boolean
-          default: false
-          description: 'When true, the video''s generated OUTPUT files (AI images, video clips, voiceover audio, avatars) are created as temporary: guaranteed available for 24 hours, after which they may be archived and later deleted. This also covers files produced by post-build remix actions (e.g. generated background music, image-to-video conversions). Use this when your integration downloads or re-hosts the results itself and does not need VideoGen to retain them. The project and its metadata are unaffected. Defaults to false.'
-        hideFromUi:
-          type: boolean
-          default: false
-          description: When true, the project is hidden from Home and Projects by default, and generated files are hidden from the Media page. The project and files remain accessible through the API. Defaults to false.
-        autoExport:
-          type: boolean
-          default: false
-          description: When true, VideoGen exports an MP4 after the video is built (and after any `remixActions` on this request finish). The workflow run stays `running` until that export succeeds or fails. On success, poll `GET /v1/workflows/runs/{workflowRunId}` and use `downloadUrl`. Defaults to false.
-        exportOptions:
-          $ref: '#/components/schemas/ExportProjectRequest'
-          description: Export settings used when `autoExport` is true. Ignored when `autoExport` is false. Omitted fields use the same defaults as `POST /v1/projects/{projectId}/export`.
-    JobStatus:
-      type: string
-      description: Lifecycle status shared by every asynchronous job (tool executions, workflow runs, remix actions, project exports, and timeline interchange jobs). `pending` and `running` are in-progress; `succeeded`, `failed`, and `cancelled` are terminal.
-      enum:
-      - pending
-      - running
-      - succeeded
-      - failed
-      - cancelled
   parameters:
+    SelfOnlyQuery:
+      name: selfOnly
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+      description: When true, returns only items created by the API key's owner. When false (default), returns all items accessible to the team.
+    PaginationCursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Opaque pagination cursor returned as `nextCursor` by the previous page. Omit on the first request. Cursors are tied to the endpoint that produced them and must be passed unmodified. See [Pagination](/pagination).
     PaginationLimit:
       name: limit
       in: query
@@ -1240,21 +1255,6 @@ components:
       schema:
         type: string
       description: The workflow run id returned when the workflow was started.
-    SelfOnlyQuery:
-      name: selfOnly
-      in: query
-      required: false
-      schema:
-        type: boolean
-        default: false
-      description: When true, returns only items created by the API key's owner. When false (default), returns all items accessible to the team.
-    PaginationCursor:
-      name: cursor
-      in: query
-      required: false
-      schema:
-        type: string
-      description: Opaque pagination cursor returned as `nextCursor` by the previous page. Omit on the first request. Cursors are tied to the endpoint that produced them and must be passed unmodified. See [Pagination](/pagination).
   securitySchemes:
     bearerAuth:
       type: http

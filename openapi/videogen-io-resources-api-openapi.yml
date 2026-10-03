@@ -65,6 +65,24 @@ paths:
                 $ref: '#/components/schemas/ApiError'
 components:
   parameters:
+    IncludeDeprecatedVoicesQuery:
+      name: includeDeprecatedVoices
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+      description: When true, includes voices that are deprecated but still callable. Defaults to false.
+    PaginationLimit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+      description: Maximum number of items to return in the page. Defaults to 50; capped at 200. See [Pagination](/pagination).
     CatalogueQuery:
       name: query
       in: query
@@ -79,25 +97,48 @@ components:
       schema:
         type: string
       description: Opaque pagination cursor returned as `nextCursor` by the previous page. Omit on the first request. Cursors are tied to the endpoint that produced them and must be passed unmodified. See [Pagination](/pagination).
-    PaginationLimit:
-      name: limit
-      in: query
-      required: false
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 200
-        default: 50
-      description: Maximum number of items to return in the page. Defaults to 50; capped at 200. See [Pagination](/pagination).
-    IncludeDeprecatedVoicesQuery:
-      name: includeDeprecatedVoices
-      in: query
-      required: false
-      schema:
-        type: boolean
-        default: false
-      description: When true, includes voices that are deprecated but still callable. Defaults to false.
   schemas:
+    Language:
+      type: object
+      required:
+      - languageCode
+      - name
+      description: A language a project can be translated into.
+      properties:
+        languageCode:
+          type: string
+          description: The language code to pass to a `TRANSLATE_PROJECT` remix action (e.g. `es`, `fr`, `ja`).
+        name:
+          type: string
+          description: Human-readable English name of the language (e.g. `Spanish`).
+    LanguageListResponse:
+      type: object
+      required:
+      - languages
+      properties:
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Language'
+    TtsVoiceListResponse:
+      type: object
+      required:
+      - ttsVoices
+      - hasMore
+      - nextCursor
+      properties:
+        ttsVoices:
+          type: array
+          items:
+            $ref: '#/components/schemas/TtsVoice'
+        hasMore:
+          type: boolean
+          description: When true, there are more voices available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
+        nextCursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
     TtsVoice:
       type: object
       description: A text-to-speech voice.
@@ -145,25 +186,6 @@ components:
         isDeprecated:
           type: boolean
           description: When true, this voice is deprecated and may be removed in a future API version. Prefer non-deprecated voices for new integrations.
-    TtsVoiceListResponse:
-      type: object
-      required:
-      - ttsVoices
-      - hasMore
-      - nextCursor
-      properties:
-        ttsVoices:
-          type: array
-          items:
-            $ref: '#/components/schemas/TtsVoice'
-        hasMore:
-          type: boolean
-          description: When true, there are more voices available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
-        nextCursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
     ErrorRequirement:
       type: object
       description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
@@ -178,28 +200,6 @@ components:
           additionalProperties:
             type: string
           description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
-    LanguageListResponse:
-      type: object
-      required:
-      - languages
-      properties:
-        languages:
-          type: array
-          items:
-            $ref: '#/components/schemas/Language'
-    Language:
-      type: object
-      required:
-      - languageCode
-      - name
-      description: A language a project can be translated into.
-      properties:
-        languageCode:
-          type: string
-          description: The language code to pass to a `TRANSLATE_PROJECT` remix action (e.g. `es`, `fr`, `ja`).
-        name:
-          type: string
-          description: Human-readable English name of the language (e.g. `Spanish`).
     ApiError:
       type: object
       description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
