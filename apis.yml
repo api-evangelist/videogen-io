@@ -14,6 +14,12 @@ created: '2026-10-02'
 modified: '2026-10-02'
 tags:
 - Company
+- Artificial Intelligence
+- Video
+- Automation
+- Platform
+tags_raw:
+- Company
 - AI
 - Video
 - Automation
@@ -24,6 +30,9 @@ maintainers:
 - FN: APIs.json
   email: info@apis.io
 common:
+- type: CapabilityMap
+  url: capabilities/videogen-io-capability-edges.yml
+  name: VideoGen Business Capability Map
 - type: SignUp
   url: https://app.videogen.io/signup?internalReferrerPath=%2F
 - type: AgenticAccess
@@ -174,6 +183,8 @@ apis:
   humanURL: https://docs.videogen.io
   baseURL: https://api.videogen.io
   tags:
+  - File
+  tags_raw:
   - Files
   properties:
   - type: OpenAPI
@@ -196,6 +207,8 @@ apis:
   humanURL: https://docs.videogen.io
   baseURL: https://api.videogen.io
   tags:
+  - Project
+  tags_raw:
   - Projects
   properties:
   - type: OpenAPI
@@ -286,6 +299,8 @@ apis:
   humanURL: https://docs.videogen.io
   baseURL: https://api.videogen.io
   tags:
+  - Webhook Events
+  tags_raw:
   - Webhook events
   properties:
   - type: OpenAPI
@@ -309,6 +324,8 @@ apis:
   humanURL: https://docs.videogen.io
   baseURL: https://api.videogen.io
   tags:
+  - Webhook
+  tags_raw:
   - Webhooks
   properties:
   - type: OpenAPI
