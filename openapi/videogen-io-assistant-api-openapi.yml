@@ -156,71 +156,15 @@ paths:
                 $ref: '#/components/schemas/ApiError'
 components:
   schemas:
-    StartWorkflowRunResponse:
+    ActOnAssistantActionResponse:
       type: object
-      description: 'Returned when a workflow run is accepted. Poll `GET /v1/workflows/runs/{workflowRunId}` or subscribe to webhooks for completion. When the start request set `autoExport: true`, wait until `status` is `succeeded` and use `downloadUrl`.'
-      required:
-      - workflowRunId
-      - projectId
-      - projectUrl
-      - remixActionIds
-      properties:
-        workflowRunId:
-          type: string
-          description: Opaque workflow run id (e.g. `vg_work_...`).
-        projectId:
-          type: string
-          description: Id of the project created for this workflow run (e.g. `vg_proj_...`).
-        projectUrl:
-          type: string
-          format: uri
-          description: 'Deep link to open this project in the VideoGen web editor. Not required for an API-only integration: store `projectId` and use the Projects API (export, remix, metadata). Use `projectUrl` when a person should open the project in the app to review or edit it manually. The project is visible only to members of your team and any project collaborators, the same access model as a project created in the dashboard.'
-        remixActionIds:
-          type: array
-          items:
-            type: string
-          description: Opaque remix action ids (e.g. `vg_rmix_...`), one per `remixActions` entry in request order. Empty when no remix actions were requested. Each runs after the video is built; poll `GET /v1/projects/{projectId}/remix-actions`.
-    StartAssistantChatResponse:
-      type: object
-      description: Returned when a `POST /v1/assistants` call is accepted. Poll `messageId` for the pending assistant reply; keep `assistantId` / `projectId` to continue the chat and address the project.
+      description: Returned when a `POST /v1/assistants/{assistantId}/actions/{actionId}` call is accepted. Use `messageId` to poll the resulting assistant message.
       required:
       - messageId
-      - assistantId
-      - projectId
-      - projectUrl
       properties:
         messageId:
           type: string
-          description: Opaque assistant message id for the pending assistant reply (e.g. `vg_mesg_...`). Poll `GET /v1/assistant-messages/{messageId}`.
-        assistantId:
-          type: string
-          description: Opaque assistant chat id (e.g. `vg_asst_...`). Pass to `GET /v1/assistants/{assistantId}` and follow-up message/action calls.
-        projectId:
-          type: string
-          description: Opaque project id for the new chat (e.g. `vg_proj_...`).
-        projectUrl:
-          type: string
-          format: uri
-          description: Deep link to open this project in the VideoGen web app.
-    ActOnAssistantActionRequest:
-      type: object
-      properties:
-        decision:
-          type: string
-          enum:
-          - APPROVE
-          - REJECT
-          default: APPROVE
-          description: Whether to approve (apply) or reject the action. Defaults to `APPROVE`.
-    WorkflowType:
-      type: string
-      description: Workflow type identifier.
-      enum:
-      - SCRIPT_TO_VIDEO
-      - VOICEOVER_TO_VIDEO
-      - SLIDESHOW_TO_VIDEO
-      - STORYBOARD_TO_VIDEO
-      - PROMPT_TO_VIDEO_CLIP
+          description: Opaque assistant message id for the assistant reply produced by acting on the action (e.g. `vg_mesg_...`). Poll `GET /v1/assistant-messages/{messageId}`.
     AssistantWorkflowSuggestion:
       type: object
       description: A starting-point workflow the assistant suggests for the conversation. Act on it with `POST /v1/assistants/{assistantId}/actions/{actionId}` to select the workflow and continue.
@@ -242,191 +186,6 @@ components:
         description:
           type: string
           description: One-line explanation of what this workflow will do.
-    GetAssistantResponse:
-      type: object
-      description: An assistant chat and every message it currently contains.
-      required:
-      - assistantId
-      - projectId
-      - projectUrl
-      - messages
-      properties:
-        assistantId:
-          type: string
-          description: Opaque assistant chat id (e.g. `vg_asst_...`).
-        projectId:
-          type: string
-          description: Opaque project id of the project this chat belongs to (e.g. `vg_proj_...`).
-        projectUrl:
-          type: string
-          format: uri
-          description: Deep link to open this chat's project in the VideoGen web app. Visible only to members of your team and project collaborators.
-        messages:
-          type: array
-          description: Every message in the chat in chronological order (oldest first).
-          items:
-            $ref: '#/components/schemas/AssistantMessage'
-    AssistantInputMessage:
-      type: object
-      description: A user-authored message in an assistant chat.
-      required:
-      - messageId
-      - role
-      - status
-      - content
-      - attachments
-      - createdAt
-      properties:
-        messageId:
-          type: string
-          description: Opaque assistant message id (e.g. `vg_mesg_...`).
-        role:
-          type: string
-          enum:
-          - user
-          description: Always `user`.
-        status:
-          $ref: '#/components/schemas/AssistantMessageStatus'
-        content:
-          type: string
-          description: The user's message text.
-        attachments:
-          type: array
-          description: Files attached to this message.
-          items:
-            $ref: '#/components/schemas/AssistantMessageAttachment'
-        createdAt:
-          type: integer
-          description: Seconds since epoch (Unix timestamp) when the message was created.
-    AssistantMessage:
-      description: A single message in an assistant chat. Discriminated by `role`.
-      oneOf:
-      - $ref: '#/components/schemas/AssistantInputMessage'
-      - $ref: '#/components/schemas/AssistantOutputMessage'
-      discriminator:
-        propertyName: role
-        mapping:
-          user: '#/components/schemas/AssistantInputMessage'
-          assistant: '#/components/schemas/AssistantOutputMessage'
-    SendAssistantMessageResponse:
-      type: object
-      description: Returned when a `POST /v1/assistants/{assistantId}/messages` call is accepted. Use `messageId` to poll the pending assistant reply.
-      required:
-      - messageId
-      properties:
-        messageId:
-          type: string
-          description: Opaque assistant message id for the pending assistant reply (e.g. `vg_mesg_...`). Poll `GET /v1/assistant-messages/{messageId}`.
-    AssistantMessageStatus:
-      type: string
-      description: Lifecycle status of an assistant chat message. `pending` and `running` are in-progress; `succeeded`, `failed`, and `cancelled` are terminal.
-      enum:
-      - pending
-      - running
-      - succeeded
-      - failed
-      - cancelled
-    ApiError:
-      type: object
-      description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
-
-
-        - `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.
-
-
-        Common `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.
-
-        '
-      required:
-      - message
-      properties:
-        message:
-          type: string
-          description: Human-readable error description. For display and logging only; do not branch on its exact text.
-        code:
-          type:
-          - string
-          - 'null'
-          description: Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies.
-        requirement:
-          description: What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.
-          anyOf:
-          - $ref: '#/components/schemas/ErrorRequirement'
-          - type: 'null'
-        internalErrorCode:
-          type:
-          - string
-          - 'null'
-          description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
-    AssistantActionDetail:
-      type: object
-      description: Extra data for rendering this action inline (in a chat surface or integration) without opening the web app. Fields are populated only when relevant to the action's kind; all are optional.
-      properties:
-        summary:
-          type:
-          - string
-          - 'null'
-          description: Human-readable summary of the proposed plan or edit (for `APPROVE_PLAN` and `APPLY_EDIT` actions).
-        creditsRemaining:
-          type:
-          - integer
-          - 'null'
-          description: Credits currently remaining on your team (for the usage/credits widget). A whole number of credits.
-        estimatedCredits:
-          type:
-          - integer
-          - 'null'
-          description: Estimated credit cost of the current workflow (for the cost-estimate widget). A whole number of credits.
-    AssistantMessageAttachment:
-      type: object
-      description: A file linked to an assistant chat message.
-      required:
-      - displayName
-      properties:
-        fileId:
-          type:
-          - string
-          - 'null'
-          description: File id (e.g. `vg_file_...`) when the attachment is a storage file. `null` for attachments that are not resolvable storage files.
-        displayName:
-          type: string
-          description: Human-readable name of the attachment.
-    SendAssistantMessageRequest:
-      type: object
-      required:
-      - message
-      properties:
-        message:
-          type: string
-          example: Make it more upbeat and add captions
-          description: The message to send to the assistant in this project chat.
-    StartAssistantChatRequest:
-      type: object
-      required:
-      - message
-      properties:
-        message:
-          type: string
-          example: A 30-second explainer about our new pricing tiers
-          description: The first message to send to the assistant, exactly as a person would type it into the assistant on a new project.
-        autoGenerate:
-          type: boolean
-          default: false
-          description: When true, the assistant picks the best workflow for the message and immediately starts generating, skipping the suggestion step. When the assistant message reaches `succeeded`, its `generation` carries the workflow run to poll.
-    ErrorRequirement:
-      type: object
-      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
-        details:
-          type: object
-          additionalProperties:
-            type: string
-          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
     AssistantOutputMessage:
       type: object
       description: An assistant-authored message in an assistant chat, including any suggestions or actions it offered.
@@ -485,6 +244,108 @@ components:
         createdAt:
           type: integer
           description: Seconds since epoch (Unix timestamp) when the message was created.
+    SendAssistantMessageResponse:
+      type: object
+      description: Returned when a `POST /v1/assistants/{assistantId}/messages` call is accepted. Use `messageId` to poll the pending assistant reply.
+      required:
+      - messageId
+      properties:
+        messageId:
+          type: string
+          description: Opaque assistant message id for the pending assistant reply (e.g. `vg_mesg_...`). Poll `GET /v1/assistant-messages/{messageId}`.
+    AssistantMessageAttachment:
+      type: object
+      description: A file linked to an assistant chat message.
+      required:
+      - displayName
+      properties:
+        fileId:
+          type:
+          - string
+          - 'null'
+          description: File id (e.g. `vg_file_...`) when the attachment is a storage file. `null` for attachments that are not resolvable storage files.
+        displayName:
+          type: string
+          description: Human-readable name of the attachment.
+    AssistantMessageStatus:
+      type: string
+      description: Lifecycle status of an assistant chat message. `pending` and `running` are in-progress; `succeeded`, `failed`, and `cancelled` are terminal.
+      enum:
+      - pending
+      - running
+      - succeeded
+      - failed
+      - cancelled
+    ApiError:
+      type: object
+      description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
+
+
+        - `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.
+
+
+        Common `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.
+
+        '
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          description: Human-readable error description. For display and logging only; do not branch on its exact text.
+        code:
+          type:
+          - string
+          - 'null'
+          description: Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies.
+        requirement:
+          description: What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.
+          anyOf:
+          - $ref: '#/components/schemas/ErrorRequirement'
+          - type: 'null'
+        internalErrorCode:
+          type:
+          - string
+          - 'null'
+          description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
+    StartWorkflowRunResponse:
+      type: object
+      description: 'Returned when a workflow run is accepted. Poll `GET /v1/workflows/runs/{workflowRunId}` or subscribe to webhooks for completion. When the start request set `autoExport: true`, wait until `status` is `succeeded` and use `downloadUrl`.'
+      required:
+      - workflowRunId
+      - projectId
+      - projectUrl
+      - remixActionIds
+      properties:
+        workflowRunId:
+          type: string
+          description: Opaque workflow run id (e.g. `vg_work_...`).
+        projectId:
+          type: string
+          description: Id of the project created for this workflow run (e.g. `vg_proj_...`).
+        projectUrl:
+          type: string
+          format: uri
+          description: 'Deep link to open this project in the VideoGen web editor. Not required for an API-only integration: store `projectId` and use the Projects API (export, remix, metadata). Use `projectUrl` when a person should open the project in the app to review or edit it manually. The project is visible only to members of your team and any project collaborators, the same access model as a project created in the dashboard.'
+        remixActionIds:
+          type: array
+          items:
+            type: string
+          description: Opaque remix action ids (e.g. `vg_rmix_...`), one per `remixActions` entry in request order. Empty when no remix actions were requested. Each runs after the video is built; poll `GET /v1/projects/{projectId}/remix-actions`.
+    ErrorRequirement:
+      type: object
+      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
     AssistantAction:
       type: object
       description: An actionable widget the assistant offered on this turn. Act on it with `POST /v1/assistants/{assistantId}/actions/{actionId}` unless `requiresApp` is true.
@@ -508,15 +369,110 @@ components:
         detail:
           $ref: '#/components/schemas/AssistantActionDetail'
           description: Optional extra data for rendering this action inline without opening the app.
-    ActOnAssistantActionResponse:
+    WorkflowType:
+      type: string
+      description: Workflow type identifier.
+      enum:
+      - SCRIPT_TO_VIDEO
+      - VOICEOVER_TO_VIDEO
+      - SLIDESHOW_TO_VIDEO
+      - STORYBOARD_TO_VIDEO
+      - PROMPT_TO_VIDEO_CLIP
+    AssistantInputMessage:
       type: object
-      description: Returned when a `POST /v1/assistants/{assistantId}/actions/{actionId}` call is accepted. Use `messageId` to poll the resulting assistant message.
+      description: A user-authored message in an assistant chat.
       required:
       - messageId
+      - role
+      - status
+      - content
+      - attachments
+      - createdAt
       properties:
         messageId:
           type: string
-          description: Opaque assistant message id for the assistant reply produced by acting on the action (e.g. `vg_mesg_...`). Poll `GET /v1/assistant-messages/{messageId}`.
+          description: Opaque assistant message id (e.g. `vg_mesg_...`).
+        role:
+          type: string
+          enum:
+          - user
+          description: Always `user`.
+        status:
+          $ref: '#/components/schemas/AssistantMessageStatus'
+        content:
+          type: string
+          description: The user's message text.
+        attachments:
+          type: array
+          description: Files attached to this message.
+          items:
+            $ref: '#/components/schemas/AssistantMessageAttachment'
+        createdAt:
+          type: integer
+          description: Seconds since epoch (Unix timestamp) when the message was created.
+    AssistantActionDetail:
+      type: object
+      description: Extra data for rendering this action inline (in a chat surface or integration) without opening the web app. Fields are populated only when relevant to the action's kind; all are optional.
+      properties:
+        summary:
+          type:
+          - string
+          - 'null'
+          description: Human-readable summary of the proposed plan or edit (for `APPROVE_PLAN` and `APPLY_EDIT` actions).
+        creditsRemaining:
+          type:
+          - integer
+          - 'null'
+          description: Credits currently remaining on your team (for the usage/credits widget). A whole number of credits.
+        estimatedCredits:
+          type:
+          - integer
+          - 'null'
+          description: Estimated credit cost of the current workflow (for the cost-estimate widget). A whole number of credits.
+    GetAssistantResponse:
+      type: object
+      description: An assistant chat and every message it currently contains.
+      required:
+      - assistantId
+      - projectId
+      - projectUrl
+      - messages
+      properties:
+        assistantId:
+          type: string
+          description: Opaque assistant chat id (e.g. `vg_asst_...`).
+        projectId:
+          type: string
+          description: Opaque project id of the project this chat belongs to (e.g. `vg_proj_...`).
+        projectUrl:
+          type: string
+          format: uri
+          description: Deep link to open this chat's project in the VideoGen web app. Visible only to members of your team and project collaborators.
+        messages:
+          type: array
+          description: Every message in the chat in chronological order (oldest first).
+          items:
+            $ref: '#/components/schemas/AssistantMessage'
+    AssistantMessage:
+      description: A single message in an assistant chat. Discriminated by `role`.
+      oneOf:
+      - $ref: '#/components/schemas/AssistantInputMessage'
+      - $ref: '#/components/schemas/AssistantOutputMessage'
+      discriminator:
+        propertyName: role
+        mapping:
+          user: '#/components/schemas/AssistantInputMessage'
+          assistant: '#/components/schemas/AssistantOutputMessage'
+    ActOnAssistantActionRequest:
+      type: object
+      properties:
+        decision:
+          type: string
+          enum:
+          - APPROVE
+          - REJECT
+          default: APPROVE
+          description: Whether to approve (apply) or reject the action. Defaults to `APPROVE`.
     AssistantActionKind:
       type: string
       description: Normalized category of an actionable widget the assistant offered. `APPROVE_PLAN` accepts a proposed generation plan; `APPLY_EDIT` applies a proposed edit (e.g. a rewritten script); `RUN_TOOL` runs an inline tool; `GENERATE` starts building the video; `OPEN_IN_APP` requires the full web app — open the assistant's `projectUrl` instead of acting via the API.
@@ -526,14 +482,51 @@ components:
       - RUN_TOOL
       - GENERATE
       - OPEN_IN_APP
+    SendAssistantMessageRequest:
+      type: object
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          example: Make it more upbeat and add captions
+          description: The message to send to the assistant in this project chat.
+    StartAssistantChatResponse:
+      type: object
+      description: Returned when a `POST /v1/assistants` call is accepted. Poll `messageId` for the pending assistant reply; keep `assistantId` / `projectId` to continue the chat and address the project.
+      required:
+      - messageId
+      - assistantId
+      - projectId
+      - projectUrl
+      properties:
+        messageId:
+          type: string
+          description: Opaque assistant message id for the pending assistant reply (e.g. `vg_mesg_...`). Poll `GET /v1/assistant-messages/{messageId}`.
+        assistantId:
+          type: string
+          description: Opaque assistant chat id (e.g. `vg_asst_...`). Pass to `GET /v1/assistants/{assistantId}` and follow-up message/action calls.
+        projectId:
+          type: string
+          description: Opaque project id for the new chat (e.g. `vg_proj_...`).
+        projectUrl:
+          type: string
+          format: uri
+          description: Deep link to open this project in the VideoGen web app.
+    StartAssistantChatRequest:
+      type: object
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          example: A 30-second explainer about our new pricing tiers
+          description: The first message to send to the assistant, exactly as a person would type it into the assistant on a new project.
+        autoGenerate:
+          type: boolean
+          default: false
+          description: When true, the assistant picks the best workflow for the message and immediately starts generating, skipping the suggestion step. When the assistant message reaches `succeeded`, its `generation` carries the workflow run to poll.
   parameters:
-    AssistantIdPath:
-      name: assistantId
-      in: path
-      required: true
-      schema:
-        type: string
-      description: The assistant chat id (e.g. `vg_asst_...`). Every API project has one assistant chat; find it on `ProjectResponse.assistantId`.
     MessageIdPath:
       name: messageId
       in: path
@@ -541,6 +534,13 @@ components:
       schema:
         type: string
       description: The assistant message id (e.g. `vg_mesg_...`) returned by an assistant POST.
+    AssistantIdPath:
+      name: assistantId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The assistant chat id (e.g. `vg_asst_...`). Every API project has one assistant chat; find it on `ProjectResponse.assistantId`.
   securitySchemes:
     bearerAuth:
       type: http

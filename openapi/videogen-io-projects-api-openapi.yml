@@ -256,276 +256,6 @@ paths:
                 $ref: '#/components/schemas/ApiError'
 components:
   schemas:
-    ProjectResponse:
-      type: object
-      description: Simplified project metadata.
-      required:
-      - projectId
-      - assistantId
-      - title
-      - aspectRatio
-      - status
-      - createdAt
-      - updatedAt
-      - projectUrl
-      properties:
-        projectId:
-          type: string
-          description: Opaque project id (e.g. `vg_proj_...`).
-        assistantId:
-          type:
-          - string
-          - 'null'
-          description: Opaque id of this project's assistant conversation (e.g. `vg_asst_...`). Use with the Assistant API to send follow-up messages or list the assistant's prior messages for this project. `null` for older projects created before assistant chats were attached at creation time.
-        title:
-          type: string
-        aspectRatio:
-          $ref: '#/components/schemas/AspectRatio'
-        status:
-          type: string
-          description: High-level project status.
-          enum:
-          - generating
-          - ready
-        createdAt:
-          type: integer
-          description: Seconds since epoch (Unix timestamp) when the project was created.
-        updatedAt:
-          type: integer
-          description: Seconds since epoch (Unix timestamp) when the project was last updated.
-        projectUrl:
-          type: string
-          format: uri
-          description: 'Deep link to open this project in the VideoGen web editor. Not required for an API-only integration: store `projectId` and use the Projects API (export, remix, metadata). Use `projectUrl` when a person should open the project in the app to review or edit it manually. The project is visible only to members of your team and any project collaborators, the same access model as a project created in the dashboard.'
-    ListRemixActionsResponse:
-      type: object
-      required:
-      - remixActions
-      - hasMore
-      - nextCursor
-      properties:
-        remixActions:
-          type: array
-          items:
-            $ref: '#/components/schemas/RemixActionRun'
-          description: Remix actions for the project, most recent first.
-        hasMore:
-          type: boolean
-          description: When true, there are more remix actions available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
-        nextCursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
-    ExportProjectResponse:
-      type: object
-      required:
-      - exportId
-      properties:
-        exportId:
-          type: string
-          description: Opaque export id (e.g. `vg_expo_...`). Poll `GET /v1/projects/{projectId}/exports/{exportId}` or subscribe to webhooks for completion.
-    WorkflowRgbColor:
-      type: object
-      required:
-      - red
-      - green
-      - blue
-      description: An RGB color. Each channel is an integer from 0 to 255.
-      properties:
-        red:
-          type: integer
-          minimum: 0
-          maximum: 255
-        green:
-          type: integer
-          minimum: 0
-          maximum: 255
-        blue:
-          type: integer
-          minimum: 0
-          maximum: 255
-    JobStatus:
-      type: string
-      description: Lifecycle status shared by every asynchronous job (tool executions, workflow runs, remix actions, project exports, and timeline interchange jobs). `pending` and `running` are in-progress; `succeeded`, `failed`, and `cancelled` are terminal.
-      enum:
-      - pending
-      - running
-      - succeeded
-      - failed
-      - cancelled
-    WatermarkMode:
-      type: string
-      enum:
-      - NONE
-      - VIDEO_GEN
-      - AUTO
-      default: AUTO
-      description: Controls whether the VideoGen watermark is applied to the output. `AUTO` applies the watermark unless you have a Pro plan. `VIDEO_GEN` always applies it. `NONE` removes the watermark (requires Pro; returns an error if you don't have it).
-    FileSource:
-      type: object
-      description: A rendition source for a file (e.g. thumbnail, preview, download). Contains a signed URL and metadata.
-      required:
-      - status
-      properties:
-        status:
-          type: string
-          enum:
-          - pending
-          - ready
-          - failed
-          - skipped
-          description: '`pending`: asset is still processing or has not been hydrated yet. `ready`: signed URL is available. `failed`: rendition generation failed. `skipped`: rendition does not apply to this file type (e.g. thumbnail for audio).'
-        url:
-          type:
-          - string
-          - 'null'
-          description: Signed URL. Present when status is `ready` and file has been recently hydrated. If missing, call the hydrate endpoint.
-        expiresAt:
-          type:
-          - integer
-          - 'null'
-          description: Seconds since epoch (Unix timestamp) when the signed URL expires.
-        width:
-          type:
-          - integer
-          - 'null'
-          description: Rendition width in pixels, when known.
-        height:
-          type:
-          - integer
-          - 'null'
-          description: Rendition height in pixels, when known.
-        fileBytes:
-          type:
-          - integer
-          - 'null'
-          description: File size in bytes, when known.
-    ExportProjectQuality:
-      type: string
-      description: Vertical resolution tier for the rendered MP4.
-      enum:
-      - STANDARD
-      - HIGH
-      - FULL_HIGH
-      - ULTRA_HIGH
-    RemixActionEnableCaptions:
-      type: object
-      required:
-      - type
-      description: Show captions on every captionable section. Optionally override the project caption style.
-      properties:
-        type:
-          type: string
-          enum:
-          - ENABLE_CAPTIONS
-        captionStyle:
-          description: Caption styling to apply. Omit or pass `null` to show captions with the current style. Any provided field overrides that field; omitted fields keep their current value.
-          anyOf:
-          - $ref: '#/components/schemas/WorkflowCaptionStyle'
-          - type: 'null'
-    AspectRatio:
-      type: object
-      required:
-      - width
-      - height
-      description: Aspect ratio as a width:height pair (e.g. 16 and 9 for 16:9). Not pixel dimensions.
-      properties:
-        width:
-          type: integer
-          minimum: 1
-        height:
-          type: integer
-          minimum: 1
-    WorkflowCaptionBackgroundStyle:
-      type: object
-      required:
-      - type
-      - backgroundColor
-      description: Background drawn behind caption text.
-      properties:
-        type:
-          type: string
-          enum:
-          - RECT
-          - WRAPPED
-          - WORD_BY_WORD
-          description: RECT draws one rectangle behind the whole line; WRAPPED hugs the text; WORD_BY_WORD draws a box per word.
-        backgroundColor:
-          $ref: '#/components/schemas/WorkflowRgbColor'
-        borderRadiusProportion:
-          type: number
-          minimum: 0
-          maximum: 1
-          description: Corner rounding as a proportion of the background height, between 0 (square corners) and 1 (fully rounded).
-        opacityProportion:
-          type: number
-          minimum: 0
-          maximum: 1
-          description: Background opacity from 0 (transparent) to 1 (opaque).
-    RemixActionSetBackgroundMusic:
-      type: object
-      required:
-      - type
-      description: Set, replace, or remove the project's background music track.
-      properties:
-        type:
-          type: string
-          enum:
-          - SET_BACKGROUND_MUSIC
-        fileId:
-          type:
-          - string
-          - 'null'
-          description: File id of an uploaded audio file to use as background music (e.g. `vg_file_...`). Upload it first via `POST /v1/files/upload`. Pass `null` to remove the existing background music.
-        volume:
-          type:
-          - number
-          - 'null'
-          minimum: 0
-          maximum: 1
-          description: Music volume from 0 (silent) to 1 (full). Omit or pass `null` to keep the current volume.
-    ListProjectExportsResponse:
-      type: object
-      required:
-      - exports
-      - hasMore
-      - nextCursor
-      properties:
-        exports:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProjectExport'
-          description: Fully hydrated exports for this project, newest first. Each includes status, signed download/thumbnail URLs, and the embedded `file`.
-        hasMore:
-          type: boolean
-          description: When true, there are more exports available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
-        nextCursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
-    FileType:
-      type: string
-      enum:
-      - IMAGE
-      - VIDEO
-      - AUDIO
-      - PDF
-      - SLIDESHOW
-      - TEXT
-      - LOTTIE
-      description: File type. `TEXT` covers plain-text and editor-interchange documents; `LOTTIE` is a JSON animation.
-    RemixActionDisableCaptions:
-      type: object
-      required:
-      - type
-      description: Hide captions on every captionable section.
-      properties:
-        type:
-          type: string
-          enum:
-          - DISABLE_CAPTIONS
     RemixActionCleanUpTranscript:
       type: object
       required:
@@ -559,309 +289,6 @@ components:
           - 'null'
           minimum: 0
           description: Shortest pause (in seconds) to remove; pauses below this stay. Omit or pass `null` to use the default threshold.
-    RemixProjectResponse:
-      type: object
-      description: Returned when remix actions are accepted. Poll `GET /v1/projects/{projectId}/remix-actions` for status.
-      required:
-      - projectId
-      - projectUrl
-      - remixActionIds
-      properties:
-        projectId:
-          type: string
-          description: Id of the edited project (e.g. `vg_proj_...`; the duplicate when `saveAsNewProject` was true).
-        projectUrl:
-          type: string
-          format: uri
-          description: 'Deep link to open this project in the VideoGen web editor. Not required for an API-only integration: store `projectId` and use the Projects API (export, remix, metadata). Use `projectUrl` when a person should open the project in the app to review or edit it manually. The project is visible only to members of your team and any project collaborators, the same access model as a project created in the dashboard.'
-        remixActionIds:
-          type: array
-          items:
-            type: string
-          description: Opaque remix action ids (e.g. `vg_rmix_...`), one per requested action in order.
-    WorkflowCaptionStyle:
-      type: object
-      description: Caption styling. Any omitted field falls back to the VideoGen default caption style. Provide an empty object (`{}`) to keep the default style but ensure captions are shown. Pass `null` for the whole `captionStyle` field to hide captions entirely.
-      properties:
-        fontName:
-          type: string
-          description: Font family name.
-        fontSize:
-          type: number
-          minimum: 1
-          description: Font size in pixels at 1080p. Must be greater than 0.
-        fontWeight:
-          type: integer
-          enum:
-          - 100
-          - 200
-          - 300
-          - 400
-          - 500
-          - 600
-          - 700
-          - 800
-          - 900
-          description: Numeric font weight (400 = regular, 700 = bold).
-        textColor:
-          $ref: '#/components/schemas/WorkflowRgbColor'
-        textJustification:
-          type: string
-          enum:
-          - LEFT
-          - CENTER
-          - RIGHT
-        verticalAlignment:
-          type: string
-          enum:
-          - TOP
-          - MIDDLE
-          - BOTTOM
-          description: Vertical position of the caption block in the frame.
-        strokeColor:
-          description: Outline color around glyphs, or null for no outline.
-          anyOf:
-          - $ref: '#/components/schemas/WorkflowRgbColor'
-          - type: 'null'
-        strokeWeight:
-          type: number
-          minimum: 0
-          description: Outline thickness in pixels. 0 disables the outline.
-        backgroundStyle:
-          description: Background drawn behind the text, or null for no background.
-          anyOf:
-          - $ref: '#/components/schemas/WorkflowCaptionBackgroundStyle'
-          - type: 'null'
-        spokenTextColor:
-          description: Color applied to the currently spoken word for karaoke-style highlighting, or null to keep the base text color.
-          anyOf:
-          - $ref: '#/components/schemas/WorkflowRgbColor'
-          - type: 'null'
-        spokenTextStrokeColor:
-          description: Outline color applied to the currently spoken word, or null.
-          anyOf:
-          - $ref: '#/components/schemas/WorkflowRgbColor'
-          - type: 'null'
-        persistSpokenTextColor:
-          type: boolean
-          description: When true, a word keeps the spoken-text color after it has been spoken instead of reverting.
-    RemixActionResizeProject:
-      type: object
-      required:
-      - type
-      - aspectRatio
-      description: Change the project's output aspect ratio (e.g. to a vertical 9:16 social format). The video is re-flowed to the new ratio.
-      properties:
-        type:
-          type: string
-          enum:
-          - RESIZE_PROJECT
-        aspectRatio:
-          $ref: '#/components/schemas/AspectRatio'
-    FileAnalysisMetadata:
-      type: object
-      description: 'Background analysis state for a file. Background analysis populates `description`, `transcript`, `durationSeconds`, and the search embedding after a file is uploaded or generated; this object lets you render a progress indicator while it runs (and skip rendering once it''s done).
-
-        '
-      required:
-      - analysisLoadingState
-      - analysisProgressPercentage
-      properties:
-        analysisLoadingState:
-          type: string
-          enum:
-          - UNATTEMPTED
-          - LOADING
-          - FULFILLED
-          - REJECTED
-          description: 'Coarse-grained analysis state.
-
-
-            - `UNATTEMPTED`: analysis has not started yet.
-
-            - `LOADING`: analysis is in progress.
-
-            - `FULFILLED`: analysis completed successfully. `description`, `transcript`, and `durationSeconds` are now populated where applicable for the file''s type.
-
-            - `REJECTED`: analysis failed permanently and will not be retried.
-
-            '
-        analysisProgressPercentage:
-          type: number
-          description: Progress in `[0, 100]`. Always `100` when `analysisLoadingState` is `FULFILLED`. Otherwise the most recent in-flight progress reported by the analysis task (or `0` if no progress has been reported yet).
-        analysisAttemptIndex:
-          type: integer
-          description: Zero-based index of the current analysis task attempt. Only present while analysis is still loading (`UNATTEMPTED` or `LOADING`); omitted once analysis reaches a terminal state.
-    RemixActionAddTransitions:
-      type: object
-      required:
-      - type
-      description: 'Stamp transitions across the project. Not per-boundary: each field you set is applied uniformly to every boundary in that scope, replacing any transition already there. Set the transition between sections, between base-layer assets, or both; omit or pass `null` for a scope to leave its transitions untouched.'
-      properties:
-        type:
-          type: string
-          enum:
-          - ADD_TRANSITIONS
-        sectionTransition:
-          description: Transition applied at every boundary between sections, replacing any existing section transitions. Omit or pass `null` to leave section transitions untouched.
-          anyOf:
-          - $ref: '#/components/schemas/RemixTransitionStyle'
-          - type: 'null'
-        assetTransition:
-          description: Transition applied at every boundary between base-layer assets within sections, replacing any existing asset transitions. Omit or pass `null` to leave asset transitions untouched.
-          anyOf:
-          - $ref: '#/components/schemas/RemixTransitionStyle'
-          - type: 'null'
-    RemixActionSetLogo:
-      type: object
-      required:
-      - type
-      description: Set, replace, or remove the logo overlay.
-      properties:
-        type:
-          type: string
-          enum:
-          - SET_LOGO
-        fileId:
-          type:
-          - string
-          - 'null'
-          description: File id of an uploaded image to overlay as a logo (e.g. `vg_file_...`). Upload it first via `POST /v1/files/upload`. Pass `null` to remove the existing logo.
-        position:
-          type:
-          - string
-          - 'null'
-          enum:
-          - TOP_LEFT
-          - TOP_CENTER
-          - TOP_RIGHT
-          - BOTTOM_LEFT
-          - BOTTOM_CENTER
-          - BOTTOM_RIGHT
-          - null
-          description: Position the logo is anchored to. Omit or pass `null` to keep the current position.
-        sizePercent:
-          type:
-          - number
-          - 'null'
-          description: Logo width as a percentage of the video width. Omit or pass `null` to keep the current size.
-    Transcript:
-      type: object
-      required:
-      - words
-      description: A transcript of an audio file, as timed words in order.
-      properties:
-        languageCode:
-          type:
-          - string
-          - 'null'
-          description: Optional BCP-47 language code of the spoken audio (e.g. `en`, `es`). Used to tag the transcript's language; omit if unknown.
-        words:
-          type: array
-          items:
-            $ref: '#/components/schemas/TranscriptWord'
-          description: The transcript words, sorted by `startSeconds` and non-overlapping. Must contain at least one word.
-    ListProjectsResponse:
-      type: object
-      description: Paginated list of projects, most recently updated first. By default only API-created projects are included; pass `includeUiProjects=true` on the request to also include dashboard-created projects.
-      required:
-      - projects
-      - hasMore
-      - nextCursor
-      properties:
-        projects:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProjectResponse'
-        hasMore:
-          type: boolean
-          description: When true, there are more projects available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
-        nextCursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
-    CreateTimelineInterchangeResponse:
-      type: object
-      required:
-      - interchangeJobId
-      properties:
-        interchangeJobId:
-          type: string
-          description: Opaque timeline interchange job id (e.g. `vg_inte_...`). Poll `GET /v1/timeline-interchange/{interchangeJobId}` for completion.
-    RemixActionAddZoom:
-      type: object
-      required:
-      - type
-      description: Apply a Ken Burns zoom to every eligible still image in the project, including uploaded images. Replaces any existing still-image effect on those assets. If the project has no eligible stills, the action is skipped and completes successfully without changing anything.
-      properties:
-        type:
-          type: string
-          enum:
-          - ADD_ZOOM
-    TimelineInterchange:
-      type: object
-      required:
-      - interchangeJobId
-      - projectId
-      - format
-      - mediaDelivery
-      - status
-      - progressPercentage
-      - attemptIndex
-      - downloadUrl
-      - downloadUrlExpiresAt
-      - interchangeFileId
-      - file
-      - error
-      properties:
-        interchangeJobId:
-          type: string
-          description: Opaque timeline interchange job id (e.g. `vg_inte_...`) matching the original request.
-        projectId:
-          type: string
-          description: Id of the source project (e.g. `vg_proj_...`).
-        format:
-          $ref: '#/components/schemas/TimelineInterchangeFormat'
-        mediaDelivery:
-          $ref: '#/components/schemas/TimelineInterchangeMediaDelivery'
-        status:
-          $ref: '#/components/schemas/JobStatus'
-        progressPercentage:
-          type: number
-          minimum: 0
-          maximum: 100
-          description: Completion progress for the current attempt (0-100). Always `100` when `status` is `succeeded`.
-        attemptIndex:
-          type: integer
-          minimum: 0
-          description: Zero-based index of the current or most recent job attempt.
-        downloadUrl:
-          type:
-          - string
-          - 'null'
-          format: uri
-          description: Private signed download URL for the interchange document (or the media bundle zip when `mediaDelivery` is `BUNDLE`), valid for 7 days from when it was signed. Always present as a field; `null` until `status` is `succeeded`. This endpoint automatically re-signs the URL when it is within an hour of expiring. To fetch a fresh URL directly from the underlying file at any time, use `interchangeFileId` with the hydrate-file endpoint.
-        downloadUrlExpiresAt:
-          type:
-          - integer
-          - 'null'
-          description: Seconds since epoch (Unix timestamp) when `downloadUrl` expires. `null` while `downloadUrl` is null.
-        interchangeFileId:
-          type:
-          - string
-          - 'null'
-          description: File id (e.g. `vg_file_...`) of the interchange document or bundle zip. Always present as a field; `null` until `status` is `succeeded`. Pass it to `POST /v1/files/{fileId}/hydrate` to fetch fresh signed URLs directly from the file at any time.
-        file:
-          description: Hydrated interchange file metadata with a signed download URL. Always present as a field; `null` until `status` is `succeeded`. Its signed URL follows the same 24-hour validity and automatic re-signing as `downloadUrl`.
-          anyOf:
-          - $ref: '#/components/schemas/FileInfo'
-          - type: 'null'
-        error:
-          description: Error details. Always present as a field; `null` unless `status` is `failed`.
-          anyOf:
-          - $ref: '#/components/schemas/ApiError'
-          - type: 'null'
     ExportProjectRequest:
       type: object
       properties:
@@ -876,91 +303,6 @@ components:
           description: Destinations to deliver the finished export to when it completes, in addition to any delivery destinations already saved for the team. Each destination references a connected integration.
           items:
             $ref: '#/components/schemas/ExportDeliveryDestination'
-    RemixActionConvertImagesToVideos:
-      type: object
-      required:
-      - type
-      description: 'Animate every eligible still image in the project into a short AI video clip (image-to-video), replacing each image in place. Eligible images are non-SVG image assets backed by an uploaded or stock file. Runs asynchronously: one clip is generated per image. If the project has no eligible images, the action is skipped and completes successfully without changing anything (for example, a project whose timeline is already all video clips).'
-      properties:
-        type:
-          type: string
-          enum:
-          - CONVERT_IMAGES_TO_VIDEOS
-        motionPrompt:
-          type:
-          - string
-          - 'null'
-          description: Describe the motion to apply to every image (e.g. "slow cinematic push-in"). Omit or pass `null` for automatic motion.
-        muteOutputVideos:
-          type:
-          - boolean
-          - 'null'
-          description: Mute the generated clips and suppress generated background music. Recommended when the clips sit behind a voiceover. Defaults to `true`.
-        quality:
-          $ref: '#/components/schemas/ModelQuality'
-          description: Video generation quality tier for the image-to-video conversions (`LOW`, `STANDARD`, `HIGH`, or `MAX`). Optional; when omitted, your account's Default AI quality for video is used (change it at https://app.videogen.io/settings/account).
-    TimelineInterchangeMediaDelivery:
-      type: string
-      description: How the interchange document references media. `REMOTE_URLS` produces a single document that links to signed media URLs. `BUNDLE` produces a zip containing the document plus every referenced media file, referenced by relative path, for durable offline relinking.
-      enum:
-      - REMOTE_URLS
-      - BUNDLE
-    RemixActionUpscaleAssets:
-      type: object
-      required:
-      - type
-      description: 'Sharpen every eligible asset in the project up to 4K, replacing each in place. Runs asynchronously: one upscaled asset is generated per eligible asset. If the project has no eligible assets, the action is skipped and completes successfully without changing anything.'
-      properties:
-        type:
-          type: string
-          enum:
-          - UPSCALE_ASSETS
-        includeVideos:
-          type:
-          - boolean
-          - 'null'
-          description: Also upscale video assets (billed per output second). Defaults to `true`.
-        includeStockContent:
-          type:
-          - boolean
-          - 'null'
-          description: Also upscale stock (library) assets, not just uploaded or generated ones. Defaults to `true`.
-    RemixAction:
-      description: A single edit applied to a project. Each array entry is exactly one of the action types below, chosen by its `type` field; the variants are mutually-exclusive options, not fields you must all provide. Include only the actions you want.
-      oneOf:
-      - $ref: '#/components/schemas/RemixActionSetBackgroundMusic'
-      - $ref: '#/components/schemas/RemixActionSetLogo'
-      - $ref: '#/components/schemas/RemixActionEnableCaptions'
-      - $ref: '#/components/schemas/RemixActionDisableCaptions'
-      - $ref: '#/components/schemas/RemixActionAddTransitions'
-      - $ref: '#/components/schemas/RemixActionAddZoom'
-      - $ref: '#/components/schemas/RemixActionResizeProject'
-      - $ref: '#/components/schemas/RemixActionCleanUpTranscript'
-      - $ref: '#/components/schemas/RemixActionConvertImagesToVideos'
-      - $ref: '#/components/schemas/RemixActionRegenerateImages'
-      - $ref: '#/components/schemas/RemixActionUpscaleAssets'
-      - $ref: '#/components/schemas/RemixActionChangeNarrator'
-      - $ref: '#/components/schemas/RemixActionShuffleStockVisuals'
-      - $ref: '#/components/schemas/RemixActionGenerateMusic'
-      - $ref: '#/components/schemas/RemixActionTranslateProject'
-      discriminator:
-        propertyName: type
-        mapping:
-          SET_BACKGROUND_MUSIC: '#/components/schemas/RemixActionSetBackgroundMusic'
-          SET_LOGO: '#/components/schemas/RemixActionSetLogo'
-          ENABLE_CAPTIONS: '#/components/schemas/RemixActionEnableCaptions'
-          DISABLE_CAPTIONS: '#/components/schemas/RemixActionDisableCaptions'
-          ADD_TRANSITIONS: '#/components/schemas/RemixActionAddTransitions'
-          ADD_ZOOM: '#/components/schemas/RemixActionAddZoom'
-          RESIZE_PROJECT: '#/components/schemas/RemixActionResizeProject'
-          CLEAN_UP_TRANSCRIPT: '#/components/schemas/RemixActionCleanUpTranscript'
-          CONVERT_IMAGES_TO_VIDEOS: '#/components/schemas/RemixActionConvertImagesToVideos'
-          REGENERATE_IMAGES: '#/components/schemas/RemixActionRegenerateImages'
-          UPSCALE_ASSETS: '#/components/schemas/RemixActionUpscaleAssets'
-          CHANGE_NARRATOR: '#/components/schemas/RemixActionChangeNarrator'
-          SHUFFLE_STOCK_VISUALS: '#/components/schemas/RemixActionShuffleStockVisuals'
-          GENERATE_MUSIC: '#/components/schemas/RemixActionGenerateMusic'
-          TRANSLATE_PROJECT: '#/components/schemas/RemixActionTranslateProject'
     RemixActionRun:
       type: object
       required:
@@ -1001,61 +343,62 @@ components:
           anyOf:
           - $ref: '#/components/schemas/ApiError'
           - type: 'null'
-    RemixActionRegenerateImages:
+    RemixActionUpscaleAssets:
       type: object
       required:
       - type
-      - stylePrompt
-      description: 'Restyle every eligible still image in the project to a new look (image-to-image), replacing each image in place. Eligible images are non-SVG image assets backed by an uploaded or generated file. Runs asynchronously: one restyled image is generated per eligible image. If the project has no eligible images, the action is skipped and completes successfully without changing anything.'
+      description: 'Sharpen every eligible asset in the project up to 4K, replacing each in place. Runs asynchronously: one upscaled asset is generated per eligible asset. If the project has no eligible assets, the action is skipped and completes successfully without changing anything.'
       properties:
         type:
           type: string
           enum:
-          - REGENERATE_IMAGES
-        stylePrompt:
-          type: string
-          description: 'A full, strict paragraph for the look of every image (medium, texture, palette, then composition). Do not pass a short label such as `watercolor painting`. Image models pack the frame with text, charts, diagrams, and extra objects unless the style forbids that. Keep the picture simple: one uncluttered subject in the middle half of the frame, empty margins, and no on-image text or diagrams unless you asked for one specific word or number.'
-        quality:
-          $ref: '#/components/schemas/ModelQuality'
-          description: Image generation quality tier for the restyled images. Optional; when omitted, your account's Default AI quality for images is used (change it at https://app.videogen.io/settings/account).
-    RemixActionTranslateProject:
+          - UPSCALE_ASSETS
+        includeVideos:
+          type:
+          - boolean
+          - 'null'
+          description: Also upscale video assets (billed per output second). Defaults to `true`.
+        includeStockContent:
+          type:
+          - boolean
+          - 'null'
+          description: Also upscale stock (library) assets, not just uploaded or generated ones. Defaults to `true`.
+    RemixActionEnableCaptions:
       type: object
       required:
       - type
-      - languageCode
-      description: 'Translate the whole project into another language: every piece of text (title, section names, on-screen text overlays, transcripts, and narration scripts) is translated, and — unless disabled — each AI voiceover is re-narrated in the new language. Runs asynchronously. Requires a Pro subscription. Retrieve the list of supported language codes from `GET /v1/resources/languages`.'
+      description: Show captions on every captionable section. Optionally override the project caption style.
       properties:
         type:
           type: string
           enum:
-          - TRANSLATE_PROJECT
-        languageCode:
-          type: string
-          description: Target language code to translate the project into (e.g. `es`, `fr`, `ja`). Must be one of the codes returned by `GET /v1/resources/languages`.
-        changeVoice:
-          type:
-          - boolean
-          - 'null'
-          description: Swap each AI voiceover to a voice that natively matches the target language. Recommended, since keeping the original voice usually produces a foreign accent. Defaults to `true`.
-        translateImageText:
-          type:
-          - boolean
-          - 'null'
-          description: Also re-generate every eligible image so that text baked into the image is translated too (image-to-image). Billed per generated image. Defaults to `false`.
-    ErrorRequirement:
+          - ENABLE_CAPTIONS
+        captionStyle:
+          description: Caption styling to apply. Omit or pass `null` to show captions with the current style. Any provided field overrides that field; omitted fields keep their current value.
+          anyOf:
+          - $ref: '#/components/schemas/WorkflowCaptionStyle'
+          - type: 'null'
+    AspectRatio:
       type: object
-      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
       required:
-      - type
+      - width
+      - height
+      description: Aspect ratio as a width:height pair (e.g. 16 and 9 for 16:9). Not pixel dimensions.
       properties:
-        type:
-          type: string
-          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
-        details:
-          type: object
-          additionalProperties:
-            type: string
-          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
+        width:
+          type: integer
+          minimum: 1
+        height:
+          type: integer
+          minimum: 1
+    WatermarkMode:
+      type: string
+      enum:
+      - NONE
+      - VIDEO_GEN
+      - AUTO
+      default: AUTO
+      description: Controls whether the VideoGen watermark is applied to the output. `AUTO` applies the watermark unless you have a Pro plan. `VIDEO_GEN` always applies it. `NONE` removes the watermark (requires Pro; returns an error if you don't have it).
     FileInfo:
       type: object
       description: Metadata for a generated file. Obtain ids from tool results or `GET /v1/files`.
@@ -1184,19 +527,200 @@ components:
         fileAnalysisMetadata:
           description: Background analysis state for the file (used to populate `description`, `transcript`, `durationSeconds`, and the search embedding). Omitted when the file was returned via a path that does not check analysis progress (e.g. tool-result inline files and webhook payloads).
           $ref: '#/components/schemas/FileAnalysisMetadata'
-    ModelQuality:
+    RemixProjectRequest:
+      type: object
+      required:
+      - remixActions
+      properties:
+        remixActions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RemixAction'
+          description: Ordered list of edits to apply. Each runs asynchronously as its own remix action. Must contain at least one action.
+        saveAsNewProject:
+          type: boolean
+          description: When true, the project is duplicated first and the edits are applied to the copy, leaving the original untouched. The response's `projectId` is the copy. Defaults to false (edits the project in place).
+    RemixActionDisableCaptions:
+      type: object
+      required:
+      - type
+      description: Hide captions on every captionable section.
+      properties:
+        type:
+          type: string
+          enum:
+          - DISABLE_CAPTIONS
+    ExportProjectResponse:
+      type: object
+      required:
+      - exportId
+      properties:
+        exportId:
+          type: string
+          description: Opaque export id (e.g. `vg_expo_...`). Poll `GET /v1/projects/{projectId}/exports/{exportId}` or subscribe to webhooks for completion.
+    TimelineInterchange:
+      type: object
+      required:
+      - interchangeJobId
+      - projectId
+      - format
+      - mediaDelivery
+      - status
+      - progressPercentage
+      - attemptIndex
+      - downloadUrl
+      - downloadUrlExpiresAt
+      - interchangeFileId
+      - file
+      - error
+      properties:
+        interchangeJobId:
+          type: string
+          description: Opaque timeline interchange job id (e.g. `vg_inte_...`) matching the original request.
+        projectId:
+          type: string
+          description: Id of the source project (e.g. `vg_proj_...`).
+        format:
+          $ref: '#/components/schemas/TimelineInterchangeFormat'
+        mediaDelivery:
+          $ref: '#/components/schemas/TimelineInterchangeMediaDelivery'
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        progressPercentage:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Completion progress for the current attempt (0-100). Always `100` when `status` is `succeeded`.
+        attemptIndex:
+          type: integer
+          minimum: 0
+          description: Zero-based index of the current or most recent job attempt.
+        downloadUrl:
+          type:
+          - string
+          - 'null'
+          format: uri
+          description: Private signed download URL for the interchange document (or the media bundle zip when `mediaDelivery` is `BUNDLE`), valid for 7 days from when it was signed. Always present as a field; `null` until `status` is `succeeded`. This endpoint automatically re-signs the URL when it is within an hour of expiring. To fetch a fresh URL directly from the underlying file at any time, use `interchangeFileId` with the hydrate-file endpoint.
+        downloadUrlExpiresAt:
+          type:
+          - integer
+          - 'null'
+          description: Seconds since epoch (Unix timestamp) when `downloadUrl` expires. `null` while `downloadUrl` is null.
+        interchangeFileId:
+          type:
+          - string
+          - 'null'
+          description: File id (e.g. `vg_file_...`) of the interchange document or bundle zip. Always present as a field; `null` until `status` is `succeeded`. Pass it to `POST /v1/files/{fileId}/hydrate` to fetch fresh signed URLs directly from the file at any time.
+        file:
+          description: Hydrated interchange file metadata with a signed download URL. Always present as a field; `null` until `status` is `succeeded`. Its signed URL follows the same 24-hour validity and automatic re-signing as `downloadUrl`.
+          anyOf:
+          - $ref: '#/components/schemas/FileInfo'
+          - type: 'null'
+        error:
+          description: Error details. Always present as a field; `null` unless `status` is `failed`.
+          anyOf:
+          - $ref: '#/components/schemas/ApiError'
+          - type: 'null'
+    ExportProjectQuality:
       type: string
+      description: Vertical resolution tier for the rendered MP4.
       enum:
-      - LOW
       - STANDARD
       - HIGH
-      - MAX
-      description: 'AI generation quality tier, shared across every generative feature (image, video, text, and so on). `LOW` is fastest and cheapest, `STANDARD` balances quality and cost, `HIGH` is higher quality, and `MAX` is the highest quality.
-
-
-        When a request omits the quality field, VideoGen falls back to your account''s **Default AI quality** for that feature, which you can change at [Account settings](https://app.videogen.io/settings/account). Not every feature supports every tier; unsupported tiers are rejected with an error (see each field''s description).
-
-        '
+      - FULL_HIGH
+      - ULTRA_HIGH
+    EndScreenMode:
+      type: string
+      enum:
+      - NONE
+      - VIDEO_GEN
+      - AUTO
+      default: AUTO
+      description: Controls whether a short 'Made with VideoGen' end screen is appended to the output. `AUTO` appends it unless you have a Pro plan. `VIDEO_GEN` always appends it. `NONE` removes it (requires Pro; returns an error if you don't have it).
+    RemixTransitionStyle:
+      type: string
+      description: A transition applied at a boundary. `DYNAMIC` auto-varies the style across boundaries; `NONE` removes transitions; the rest apply that fixed style everywhere.
+      enum:
+      - DYNAMIC
+      - NONE
+      - FADE
+      - RISE
+      - PAN
+      - POP
+      - WIPE
+    FileSource:
+      type: object
+      description: A rendition source for a file (e.g. thumbnail, preview, download). Contains a signed URL and metadata.
+      required:
+      - status
+      properties:
+        status:
+          type: string
+          enum:
+          - pending
+          - ready
+          - failed
+          - skipped
+          description: '`pending`: asset is still processing or has not been hydrated yet. `ready`: signed URL is available. `failed`: rendition generation failed. `skipped`: rendition does not apply to this file type (e.g. thumbnail for audio).'
+        url:
+          type:
+          - string
+          - 'null'
+          description: Signed URL. Present when status is `ready` and file has been recently hydrated. If missing, call the hydrate endpoint.
+        expiresAt:
+          type:
+          - integer
+          - 'null'
+          description: Seconds since epoch (Unix timestamp) when the signed URL expires.
+        width:
+          type:
+          - integer
+          - 'null'
+          description: Rendition width in pixels, when known.
+        height:
+          type:
+          - integer
+          - 'null'
+          description: Rendition height in pixels, when known.
+        fileBytes:
+          type:
+          - integer
+          - 'null'
+          description: File size in bytes, when known.
+    RemixActionGenerateMusic:
+      type: object
+      required:
+      - type
+      - prompt
+      description: Generate a background music track from a text prompt and set it as the project's background music, replacing any existing track. Runs asynchronously.
+      properties:
+        type:
+          type: string
+          enum:
+          - GENERATE_MUSIC
+        prompt:
+          type: string
+          description: Describe the music to generate (e.g. "upbeat corporate background music with a driving beat").
+    RemixActionAddTransitions:
+      type: object
+      required:
+      - type
+      description: 'Stamp transitions across the project. Not per-boundary: each field you set is applied uniformly to every boundary in that scope, replacing any transition already there. Set the transition between sections, between base-layer assets, or both; omit or pass `null` for a scope to leave its transitions untouched.'
+      properties:
+        type:
+          type: string
+          enum:
+          - ADD_TRANSITIONS
+        sectionTransition:
+          description: Transition applied at every boundary between sections, replacing any existing section transitions. Omit or pass `null` to leave section transitions untouched.
+          anyOf:
+          - $ref: '#/components/schemas/RemixTransitionStyle'
+          - type: 'null'
+        assetTransition:
+          description: Transition applied at every boundary between base-layer assets within sections, replacing any existing asset transitions. Omit or pass `null` to leave asset transitions untouched.
+          anyOf:
+          - $ref: '#/components/schemas/RemixTransitionStyle'
+          - type: 'null'
     RemixActionType:
       type: string
       description: The kind of edit a remix action applies.
@@ -1216,81 +740,13 @@ components:
       - SHUFFLE_STOCK_VISUALS
       - GENERATE_MUSIC
       - TRANSLATE_PROJECT
-    EndScreenMode:
-      type: string
-      enum:
-      - NONE
-      - VIDEO_GEN
-      - AUTO
-      default: AUTO
-      description: Controls whether a short 'Made with VideoGen' end screen is appended to the output. `AUTO` appends it unless you have a Pro plan. `VIDEO_GEN` always appends it. `NONE` removes it (requires Pro; returns an error if you don't have it).
-    ExportDeliveryDestination:
+    CreateTimelineInterchangeRequest:
       type: object
-      required:
-      - integrationConnectionId
-      - type
       properties:
-        integrationConnectionId:
-          type: string
-          description: Id of the connected integration that will receive this export.
-        type:
-          type: string
-          description: Where to deliver the export within the connected integration.
-          enum:
-          - SLACK_CHANNEL
-          - GOOGLE_DRIVE_FOLDER
-        slackChannelId:
-          type:
-          - string
-          - 'null'
-          description: Target channel id. Required when `type` is `SLACK_CHANNEL`.
-        googleDriveFolderId:
-          type:
-          - string
-          - 'null'
-          description: Target folder id. Required when `type` is `GOOGLE_DRIVE_FOLDER`.
-    RemixProjectRequest:
-      type: object
-      required:
-      - remixActions
-      properties:
-        remixActions:
-          type: array
-          items:
-            $ref: '#/components/schemas/RemixAction'
-          description: Ordered list of edits to apply. Each runs asynchronously as its own remix action. Must contain at least one action.
-        saveAsNewProject:
-          type: boolean
-          description: When true, the project is duplicated first and the edits are applied to the copy, leaving the original untouched. The response's `projectId` is the copy. Defaults to false (edits the project in place).
-    TranscriptWord:
-      type: object
-      required:
-      - startSeconds
-      - endSeconds
-      - word
-      description: A single timed word of a transcript.
-      properties:
-        startSeconds:
-          type: number
-          minimum: 0
-          description: Start time of the word in seconds from the beginning of the audio.
-        endSeconds:
-          type: number
-          description: End time of the word in seconds from the beginning of the audio. Must be greater than `startSeconds`.
-        word:
-          type: string
-          description: The spoken word, used verbatim for narration timing and captions.
-    RemixTransitionStyle:
-      type: string
-      description: A transition applied at a boundary. `DYNAMIC` auto-varies the style across boundaries; `NONE` removes transitions; the rest apply that fixed style everywhere.
-      enum:
-      - DYNAMIC
-      - NONE
-      - FADE
-      - RISE
-      - PAN
-      - POP
-      - WIPE
+        format:
+          $ref: '#/components/schemas/TimelineInterchangeFormat'
+        mediaDelivery:
+          $ref: '#/components/schemas/TimelineInterchangeMediaDelivery'
     RemixActionChangeNarrator:
       type: object
       required:
@@ -1320,31 +776,16 @@ components:
           minimum: 0.5
           maximum: 2
           description: Speech rate multiplier, between 0.5 (half speed) and 2 (double speed). Omit or pass `null` to keep each asset's current speed.
-    CreateTimelineInterchangeRequest:
-      type: object
-      properties:
-        format:
-          $ref: '#/components/schemas/TimelineInterchangeFormat'
-        mediaDelivery:
-          $ref: '#/components/schemas/TimelineInterchangeMediaDelivery'
-    RemixActionShuffleStockVisuals:
+    RemixActionAddZoom:
       type: object
       required:
       - type
-      description: 'Replace every stock (library) visual in the project with a fresh alternative from the same search, replacing each in place. Runs asynchronously: each stock asset''s original search is re-run, excluding the currently-shown result. If the project has no shuffleable stock visuals, the action is skipped and completes successfully without changing anything.'
+      description: Apply a Ken Burns zoom to every eligible still image in the project, including uploaded images. Replaces any existing still-image effect on those assets. If the project has no eligible stills, the action is skipped and completes successfully without changing anything.
       properties:
         type:
           type: string
           enum:
-          - SHUFFLE_STOCK_VISUALS
-    TimelineInterchangeFormat:
-      type: string
-      description: Editor interchange document format. `FCPXML` is Final Cut Pro (also imported by DaVinci Resolve and others). `PREMIERE_XML` is the Final Cut 7 `xmeml` XML that Adobe Premiere Pro imports natively. `OTIO` is OpenTimelineIO, the vendor-neutral format. `SRT` is a SubRip caption sidecar.
-      enum:
-      - FCPXML
-      - PREMIERE_XML
-      - OTIO
-      - SRT
+          - ADD_ZOOM
     ApiError:
       type: object
       description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
@@ -1377,20 +818,125 @@ components:
           - string
           - 'null'
           description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
-    RemixActionGenerateMusic:
+    RemixActionTranslateProject:
       type: object
       required:
       - type
-      - prompt
-      description: Generate a background music track from a text prompt and set it as the project's background music, replacing any existing track. Runs asynchronously.
+      - languageCode
+      description: 'Translate the whole project into another language: every piece of text (title, section names, on-screen text overlays, transcripts, and narration scripts) is translated, and — unless disabled — each AI voiceover is re-narrated in the new language. Runs asynchronously. Requires a Pro subscription. Retrieve the list of supported language codes from `GET /v1/resources/languages`.'
       properties:
         type:
           type: string
           enum:
-          - GENERATE_MUSIC
-        prompt:
+          - TRANSLATE_PROJECT
+        languageCode:
           type: string
-          description: Describe the music to generate (e.g. "upbeat corporate background music with a driving beat").
+          description: Target language code to translate the project into (e.g. `es`, `fr`, `ja`). Must be one of the codes returned by `GET /v1/resources/languages`.
+        changeVoice:
+          type:
+          - boolean
+          - 'null'
+          description: Swap each AI voiceover to a voice that natively matches the target language. Recommended, since keeping the original voice usually produces a foreign accent. Defaults to `true`.
+        translateImageText:
+          type:
+          - boolean
+          - 'null'
+          description: Also re-generate every eligible image so that text baked into the image is translated too (image-to-image). Billed per generated image. Defaults to `false`.
+    ErrorRequirement:
+      type: object
+      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
+    RemixProjectResponse:
+      type: object
+      description: Returned when remix actions are accepted. Poll `GET /v1/projects/{projectId}/remix-actions` for status.
+      required:
+      - projectId
+      - projectUrl
+      - remixActionIds
+      properties:
+        projectId:
+          type: string
+          description: Id of the edited project (e.g. `vg_proj_...`; the duplicate when `saveAsNewProject` was true).
+        projectUrl:
+          type: string
+          format: uri
+          description: 'Deep link to open this project in the VideoGen web editor. Not required for an API-only integration: store `projectId` and use the Projects API (export, remix, metadata). Use `projectUrl` when a person should open the project in the app to review or edit it manually. The project is visible only to members of your team and any project collaborators, the same access model as a project created in the dashboard.'
+        remixActionIds:
+          type: array
+          items:
+            type: string
+          description: Opaque remix action ids (e.g. `vg_rmix_...`), one per requested action in order.
+    TimelineInterchangeFormat:
+      type: string
+      description: Editor interchange document format. `FCPXML` is Final Cut Pro (also imported by DaVinci Resolve and others). `PREMIERE_XML` is the Final Cut 7 `xmeml` XML that Adobe Premiere Pro imports natively. `OTIO` is OpenTimelineIO, the vendor-neutral format. `SRT` is a SubRip caption sidecar.
+      enum:
+      - FCPXML
+      - PREMIERE_XML
+      - OTIO
+      - SRT
+    RemixActionShuffleStockVisuals:
+      type: object
+      required:
+      - type
+      description: 'Replace every stock (library) visual in the project with a fresh alternative from the same search, replacing each in place. Runs asynchronously: each stock asset''s original search is re-run, excluding the currently-shown result. If the project has no shuffleable stock visuals, the action is skipped and completes successfully without changing anything.'
+      properties:
+        type:
+          type: string
+          enum:
+          - SHUFFLE_STOCK_VISUALS
+    ExportDeliveryDestination:
+      type: object
+      required:
+      - integrationConnectionId
+      - type
+      properties:
+        integrationConnectionId:
+          type: string
+          description: Id of the connected integration that will receive this export.
+        type:
+          type: string
+          description: Where to deliver the export within the connected integration.
+          enum:
+          - SLACK_CHANNEL
+          - GOOGLE_DRIVE_FOLDER
+        slackChannelId:
+          type:
+          - string
+          - 'null'
+          description: Target channel id. Required when `type` is `SLACK_CHANNEL`.
+        googleDriveFolderId:
+          type:
+          - string
+          - 'null'
+          description: Target folder id. Required when `type` is `GOOGLE_DRIVE_FOLDER`.
+    TranscriptWord:
+      type: object
+      required:
+      - startSeconds
+      - endSeconds
+      - word
+      description: A single timed word of a transcript.
+      properties:
+        startSeconds:
+          type: number
+          minimum: 0
+          description: Start time of the word in seconds from the beginning of the audio.
+        endSeconds:
+          type: number
+          description: End time of the word in seconds from the beginning of the audio. Must be greater than `startSeconds`.
+        word:
+          type: string
+          description: The spoken word, used verbatim for narration timing and captions.
     ProjectExport:
       type: object
       required:
@@ -1461,14 +1007,461 @@ components:
           anyOf:
           - $ref: '#/components/schemas/ApiError'
           - type: 'null'
+    Transcript:
+      type: object
+      required:
+      - words
+      description: A transcript of an audio file, as timed words in order.
+      properties:
+        languageCode:
+          type:
+          - string
+          - 'null'
+          description: Optional BCP-47 language code of the spoken audio (e.g. `en`, `es`). Used to tag the transcript's language; omit if unknown.
+        words:
+          type: array
+          items:
+            $ref: '#/components/schemas/TranscriptWord'
+          description: The transcript words, sorted by `startSeconds` and non-overlapping. Must contain at least one word.
+    RemixActionSetLogo:
+      type: object
+      required:
+      - type
+      description: Set, replace, or remove the logo overlay.
+      properties:
+        type:
+          type: string
+          enum:
+          - SET_LOGO
+        fileId:
+          type:
+          - string
+          - 'null'
+          description: File id of an uploaded image to overlay as a logo (e.g. `vg_file_...`). Upload it first via `POST /v1/files/upload`. Pass `null` to remove the existing logo.
+        position:
+          type:
+          - string
+          - 'null'
+          enum:
+          - TOP_LEFT
+          - TOP_CENTER
+          - TOP_RIGHT
+          - BOTTOM_LEFT
+          - BOTTOM_CENTER
+          - BOTTOM_RIGHT
+          - null
+          description: Position the logo is anchored to. Omit or pass `null` to keep the current position.
+        sizePercent:
+          type:
+          - number
+          - 'null'
+          description: Logo width as a percentage of the video width. Omit or pass `null` to keep the current size.
+    RemixActionConvertImagesToVideos:
+      type: object
+      required:
+      - type
+      description: 'Animate every eligible still image in the project into a short AI video clip (image-to-video), replacing each image in place. Eligible images are non-SVG image assets backed by an uploaded or stock file. Runs asynchronously: one clip is generated per image. If the project has no eligible images, the action is skipped and completes successfully without changing anything (for example, a project whose timeline is already all video clips).'
+      properties:
+        type:
+          type: string
+          enum:
+          - CONVERT_IMAGES_TO_VIDEOS
+        motionPrompt:
+          type:
+          - string
+          - 'null'
+          description: Describe the motion to apply to every image (e.g. "slow cinematic push-in"). Omit or pass `null` for automatic motion.
+        muteOutputVideos:
+          type:
+          - boolean
+          - 'null'
+          description: Mute the generated clips and suppress generated background music. Recommended when the clips sit behind a voiceover. Defaults to `true`.
+        quality:
+          $ref: '#/components/schemas/ModelQuality'
+          description: Video generation quality tier for the image-to-video conversions (`LOW`, `STANDARD`, `HIGH`, or `MAX`). Optional; when omitted, your account's Default AI quality for video is used (change it at https://app.videogen.io/settings/account).
+    CreateTimelineInterchangeResponse:
+      type: object
+      required:
+      - interchangeJobId
+      properties:
+        interchangeJobId:
+          type: string
+          description: Opaque timeline interchange job id (e.g. `vg_inte_...`). Poll `GET /v1/timeline-interchange/{interchangeJobId}` for completion.
+    ProjectResponse:
+      type: object
+      description: Simplified project metadata.
+      required:
+      - projectId
+      - assistantId
+      - title
+      - aspectRatio
+      - status
+      - createdAt
+      - updatedAt
+      - projectUrl
+      properties:
+        projectId:
+          type: string
+          description: Opaque project id (e.g. `vg_proj_...`).
+        assistantId:
+          type:
+          - string
+          - 'null'
+          description: Opaque id of this project's assistant conversation (e.g. `vg_asst_...`). Use with the Assistant API to send follow-up messages or list the assistant's prior messages for this project. `null` for older projects created before assistant chats were attached at creation time.
+        title:
+          type: string
+        aspectRatio:
+          $ref: '#/components/schemas/AspectRatio'
+        status:
+          type: string
+          description: High-level project status.
+          enum:
+          - generating
+          - ready
+        createdAt:
+          type: integer
+          description: Seconds since epoch (Unix timestamp) when the project was created.
+        updatedAt:
+          type: integer
+          description: Seconds since epoch (Unix timestamp) when the project was last updated.
+        projectUrl:
+          type: string
+          format: uri
+          description: 'Deep link to open this project in the VideoGen web editor. Not required for an API-only integration: store `projectId` and use the Projects API (export, remix, metadata). Use `projectUrl` when a person should open the project in the app to review or edit it manually. The project is visible only to members of your team and any project collaborators, the same access model as a project created in the dashboard.'
+    ListProjectExportsResponse:
+      type: object
+      required:
+      - exports
+      - hasMore
+      - nextCursor
+      properties:
+        exports:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectExport'
+          description: Fully hydrated exports for this project, newest first. Each includes status, signed download/thumbnail URLs, and the embedded `file`.
+        hasMore:
+          type: boolean
+          description: When true, there are more exports available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
+        nextCursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
+    ListRemixActionsResponse:
+      type: object
+      required:
+      - remixActions
+      - hasMore
+      - nextCursor
+      properties:
+        remixActions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RemixActionRun'
+          description: Remix actions for the project, most recent first.
+        hasMore:
+          type: boolean
+          description: When true, there are more remix actions available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
+        nextCursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
+    WorkflowRgbColor:
+      type: object
+      required:
+      - red
+      - green
+      - blue
+      description: An RGB color. Each channel is an integer from 0 to 255.
+      properties:
+        red:
+          type: integer
+          minimum: 0
+          maximum: 255
+        green:
+          type: integer
+          minimum: 0
+          maximum: 255
+        blue:
+          type: integer
+          minimum: 0
+          maximum: 255
+    RemixActionSetBackgroundMusic:
+      type: object
+      required:
+      - type
+      description: Set, replace, or remove the project's background music track.
+      properties:
+        type:
+          type: string
+          enum:
+          - SET_BACKGROUND_MUSIC
+        fileId:
+          type:
+          - string
+          - 'null'
+          description: File id of an uploaded audio file to use as background music (e.g. `vg_file_...`). Upload it first via `POST /v1/files/upload`. Pass `null` to remove the existing background music.
+        volume:
+          type:
+          - number
+          - 'null'
+          minimum: 0
+          maximum: 1
+          description: Music volume from 0 (silent) to 1 (full). Omit or pass `null` to keep the current volume.
+    TimelineInterchangeMediaDelivery:
+      type: string
+      description: How the interchange document references media. `REMOTE_URLS` produces a single document that links to signed media URLs. `BUNDLE` produces a zip containing the document plus every referenced media file, referenced by relative path, for durable offline relinking.
+      enum:
+      - REMOTE_URLS
+      - BUNDLE
+    WorkflowCaptionBackgroundStyle:
+      type: object
+      required:
+      - type
+      - backgroundColor
+      description: Background drawn behind caption text.
+      properties:
+        type:
+          type: string
+          enum:
+          - RECT
+          - WRAPPED
+          - WORD_BY_WORD
+          description: RECT draws one rectangle behind the whole line; WRAPPED hugs the text; WORD_BY_WORD draws a box per word.
+        backgroundColor:
+          $ref: '#/components/schemas/WorkflowRgbColor'
+        borderRadiusProportion:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Corner rounding as a proportion of the background height, between 0 (square corners) and 1 (fully rounded).
+        opacityProportion:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Background opacity from 0 (transparent) to 1 (opaque).
+    FileAnalysisMetadata:
+      type: object
+      description: 'Background analysis state for a file. Background analysis populates `description`, `transcript`, `durationSeconds`, and the search embedding after a file is uploaded or generated; this object lets you render a progress indicator while it runs (and skip rendering once it''s done).
+
+        '
+      required:
+      - analysisLoadingState
+      - analysisProgressPercentage
+      properties:
+        analysisLoadingState:
+          type: string
+          enum:
+          - UNATTEMPTED
+          - LOADING
+          - FULFILLED
+          - REJECTED
+          description: 'Coarse-grained analysis state.
+
+
+            - `UNATTEMPTED`: analysis has not started yet.
+
+            - `LOADING`: analysis is in progress.
+
+            - `FULFILLED`: analysis completed successfully. `description`, `transcript`, and `durationSeconds` are now populated where applicable for the file''s type.
+
+            - `REJECTED`: analysis failed permanently and will not be retried.
+
+            '
+        analysisProgressPercentage:
+          type: number
+          description: Progress in `[0, 100]`. Always `100` when `analysisLoadingState` is `FULFILLED`. Otherwise the most recent in-flight progress reported by the analysis task (or `0` if no progress has been reported yet).
+        analysisAttemptIndex:
+          type: integer
+          description: Zero-based index of the current analysis task attempt. Only present while analysis is still loading (`UNATTEMPTED` or `LOADING`); omitted once analysis reaches a terminal state.
+    ModelQuality:
+      type: string
+      enum:
+      - LOW
+      - STANDARD
+      - HIGH
+      - MAX
+      description: 'AI generation quality tier, shared across every generative feature (image, video, text, and so on). `LOW` is fastest and cheapest, `STANDARD` balances quality and cost, `HIGH` is higher quality, and `MAX` is the highest quality.
+
+
+        When a request omits the quality field, VideoGen falls back to your account''s **Default AI quality** for that feature, which you can change at [Account settings](https://app.videogen.io/settings/account). Not every feature supports every tier; unsupported tiers are rejected with an error (see each field''s description).
+
+        '
+    JobStatus:
+      type: string
+      description: Lifecycle status shared by every asynchronous job (tool executions, workflow runs, remix actions, project exports, and timeline interchange jobs). `pending` and `running` are in-progress; `succeeded`, `failed`, and `cancelled` are terminal.
+      enum:
+      - pending
+      - running
+      - succeeded
+      - failed
+      - cancelled
+    WorkflowCaptionStyle:
+      type: object
+      description: Caption styling. Any omitted field falls back to the VideoGen default caption style. Provide an empty object (`{}`) to keep the default style but ensure captions are shown. Pass `null` for the whole `captionStyle` field to hide captions entirely.
+      properties:
+        fontName:
+          type: string
+          description: Font family name.
+        fontSize:
+          type: number
+          minimum: 1
+          description: Font size in pixels at 1080p. Must be greater than 0.
+        fontWeight:
+          type: integer
+          enum:
+          - 100
+          - 200
+          - 300
+          - 400
+          - 500
+          - 600
+          - 700
+          - 800
+          - 900
+          description: Numeric font weight (400 = regular, 700 = bold).
+        textColor:
+          $ref: '#/components/schemas/WorkflowRgbColor'
+        textJustification:
+          type: string
+          enum:
+          - LEFT
+          - CENTER
+          - RIGHT
+        verticalAlignment:
+          type: string
+          enum:
+          - TOP
+          - MIDDLE
+          - BOTTOM
+          description: Vertical position of the caption block in the frame.
+        strokeColor:
+          description: Outline color around glyphs, or null for no outline.
+          anyOf:
+          - $ref: '#/components/schemas/WorkflowRgbColor'
+          - type: 'null'
+        strokeWeight:
+          type: number
+          minimum: 0
+          description: Outline thickness in pixels. 0 disables the outline.
+        backgroundStyle:
+          description: Background drawn behind the text, or null for no background.
+          anyOf:
+          - $ref: '#/components/schemas/WorkflowCaptionBackgroundStyle'
+          - type: 'null'
+        spokenTextColor:
+          description: Color applied to the currently spoken word for karaoke-style highlighting, or null to keep the base text color.
+          anyOf:
+          - $ref: '#/components/schemas/WorkflowRgbColor'
+          - type: 'null'
+        spokenTextStrokeColor:
+          description: Outline color applied to the currently spoken word, or null.
+          anyOf:
+          - $ref: '#/components/schemas/WorkflowRgbColor'
+          - type: 'null'
+        persistSpokenTextColor:
+          type: boolean
+          description: When true, a word keeps the spoken-text color after it has been spoken instead of reverting.
+    RemixActionRegenerateImages:
+      type: object
+      required:
+      - type
+      - stylePrompt
+      description: 'Restyle every eligible still image in the project to a new look (image-to-image), replacing each image in place. Eligible images are non-SVG image assets backed by an uploaded or generated file. Runs asynchronously: one restyled image is generated per eligible image. If the project has no eligible images, the action is skipped and completes successfully without changing anything.'
+      properties:
+        type:
+          type: string
+          enum:
+          - REGENERATE_IMAGES
+        stylePrompt:
+          type: string
+          description: 'A full, strict paragraph for the look of every image (medium, texture, palette, then composition). Do not pass a short label such as `watercolor painting`. Image models pack the frame with text, charts, diagrams, and extra objects unless the style forbids that. Keep the picture simple: one uncluttered subject in the middle half of the frame, empty margins, and no on-image text or diagrams unless you asked for one specific word or number.'
+        quality:
+          $ref: '#/components/schemas/ModelQuality'
+          description: Image generation quality tier for the restyled images. Optional; when omitted, your account's Default AI quality for images is used (change it at https://app.videogen.io/settings/account).
+    RemixAction:
+      description: A single edit applied to a project. Each array entry is exactly one of the action types below, chosen by its `type` field; the variants are mutually-exclusive options, not fields you must all provide. Include only the actions you want.
+      oneOf:
+      - $ref: '#/components/schemas/RemixActionSetBackgroundMusic'
+      - $ref: '#/components/schemas/RemixActionSetLogo'
+      - $ref: '#/components/schemas/RemixActionEnableCaptions'
+      - $ref: '#/components/schemas/RemixActionDisableCaptions'
+      - $ref: '#/components/schemas/RemixActionAddTransitions'
+      - $ref: '#/components/schemas/RemixActionAddZoom'
+      - $ref: '#/components/schemas/RemixActionResizeProject'
+      - $ref: '#/components/schemas/RemixActionCleanUpTranscript'
+      - $ref: '#/components/schemas/RemixActionConvertImagesToVideos'
+      - $ref: '#/components/schemas/RemixActionRegenerateImages'
+      - $ref: '#/components/schemas/RemixActionUpscaleAssets'
+      - $ref: '#/components/schemas/RemixActionChangeNarrator'
+      - $ref: '#/components/schemas/RemixActionShuffleStockVisuals'
+      - $ref: '#/components/schemas/RemixActionGenerateMusic'
+      - $ref: '#/components/schemas/RemixActionTranslateProject'
+      discriminator:
+        propertyName: type
+        mapping:
+          SET_BACKGROUND_MUSIC: '#/components/schemas/RemixActionSetBackgroundMusic'
+          SET_LOGO: '#/components/schemas/RemixActionSetLogo'
+          ENABLE_CAPTIONS: '#/components/schemas/RemixActionEnableCaptions'
+          DISABLE_CAPTIONS: '#/components/schemas/RemixActionDisableCaptions'
+          ADD_TRANSITIONS: '#/components/schemas/RemixActionAddTransitions'
+          ADD_ZOOM: '#/components/schemas/RemixActionAddZoom'
+          RESIZE_PROJECT: '#/components/schemas/RemixActionResizeProject'
+          CLEAN_UP_TRANSCRIPT: '#/components/schemas/RemixActionCleanUpTranscript'
+          CONVERT_IMAGES_TO_VIDEOS: '#/components/schemas/RemixActionConvertImagesToVideos'
+          REGENERATE_IMAGES: '#/components/schemas/RemixActionRegenerateImages'
+          UPSCALE_ASSETS: '#/components/schemas/RemixActionUpscaleAssets'
+          CHANGE_NARRATOR: '#/components/schemas/RemixActionChangeNarrator'
+          SHUFFLE_STOCK_VISUALS: '#/components/schemas/RemixActionShuffleStockVisuals'
+          GENERATE_MUSIC: '#/components/schemas/RemixActionGenerateMusic'
+          TRANSLATE_PROJECT: '#/components/schemas/RemixActionTranslateProject'
+    RemixActionResizeProject:
+      type: object
+      required:
+      - type
+      - aspectRatio
+      description: Change the project's output aspect ratio (e.g. to a vertical 9:16 social format). The video is re-flowed to the new ratio.
+      properties:
+        type:
+          type: string
+          enum:
+          - RESIZE_PROJECT
+        aspectRatio:
+          $ref: '#/components/schemas/AspectRatio'
+    FileType:
+      type: string
+      enum:
+      - IMAGE
+      - VIDEO
+      - AUDIO
+      - PDF
+      - SLIDESHOW
+      - TEXT
+      - LOTTIE
+      description: File type. `TEXT` covers plain-text and editor-interchange documents; `LOTTIE` is a JSON animation.
+    ListProjectsResponse:
+      type: object
+      description: Paginated list of projects, most recently updated first. By default only API-created projects are included; pass `includeUiProjects=true` on the request to also include dashboard-created projects.
+      required:
+      - projects
+      - hasMore
+      - nextCursor
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectResponse'
+        hasMore:
+          type: boolean
+          description: When true, there are more projects available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
+        nextCursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
   parameters:
-    ExportIdPath:
-      name: exportId
-      in: path
-      required: true
-      schema:
-        type: string
-      description: The export id (e.g. `vg_expo_...`) returned by `POST /v1/projects/{projectId}/export`.
     ProjectIdPath:
       name: projectId
       in: path
@@ -1476,22 +1469,6 @@ components:
       schema:
         type: string
       description: The project id (e.g. `vg_proj_...`).
-    IncludeUiProjectsQuery:
-      name: includeUiProjects
-      in: query
-      required: false
-      schema:
-        type: boolean
-        default: false
-      description: When true, includes dashboard-created projects in addition to API-created projects. When false (default), returns only API-created projects.
-    SelfOnlyQuery:
-      name: selfOnly
-      in: query
-      required: false
-      schema:
-        type: boolean
-        default: false
-      description: When true, returns only items created by the API key's owner. When false (default), returns all items accessible to the team.
     PaginationCursor:
       name: cursor
       in: query
@@ -1506,6 +1483,21 @@ components:
       schema:
         type: string
       description: The timeline interchange job id (e.g. `vg_inte_...`) returned by `POST /v1/projects/{projectId}/timeline-interchange`.
+    ExportIdPath:
+      name: exportId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The export id (e.g. `vg_expo_...`) returned by `POST /v1/projects/{projectId}/export`.
+    IncludeUiProjectsQuery:
+      name: includeUiProjects
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+      description: When true, includes dashboard-created projects in addition to API-created projects. When false (default), returns only API-created projects.
     PaginationLimit:
       name: limit
       in: query
@@ -1516,6 +1508,14 @@ components:
         maximum: 200
         default: 50
       description: Maximum number of items to return in the page. Defaults to 50; capped at 200. See [Pagination](/pagination).
+    SelfOnlyQuery:
+      name: selfOnly
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+      description: When true, returns only items created by the API key's owner. When false (default), returns all items accessible to the team.
   securitySchemes:
     bearerAuth:
       type: http

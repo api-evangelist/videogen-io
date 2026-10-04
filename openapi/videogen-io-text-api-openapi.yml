@@ -55,56 +55,6 @@ components:
         When a request omits the quality field, VideoGen falls back to your account''s **Default AI quality** for that feature, which you can change at [Account settings](https://app.videogen.io/settings/account). Not every feature supports every tier; unsupported tiers are rejected with an error (see each field''s description).
 
         '
-    GenerateTextRequest:
-      type: object
-      required:
-      - prompt
-      properties:
-        prompt:
-          type: string
-          example: Write a 30-second upbeat video script about why the sky is blue.
-          description: The instruction or content to generate text from.
-        system:
-          type:
-          - string
-          - 'null'
-          description: Optional system instructions that steer the model's role, tone, and constraints.
-        quality:
-          $ref: '#/components/schemas/ModelQuality'
-          description: Text generation quality tier. Optional; when omitted, your account's Default AI quality for text is used (change it at https://app.videogen.io/settings/account).
-        temperature:
-          type: number
-          minimum: 0
-          maximum: 2
-          description: Sampling temperature. Higher values produce more varied output. Defaults to the model's default.
-        maxOutputTokens:
-          type: integer
-          minimum: 1
-          maximum: 2000
-          default: 512
-          description: Maximum number of tokens to generate. Defaults to 512.
-    ErrorRequirement:
-      type: object
-      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
-        details:
-          type: object
-          additionalProperties:
-            type: string
-          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
-    GenerateTextResponse:
-      type: object
-      required:
-      - text
-      properties:
-        text:
-          type: string
-          description: The generated text.
     ApiError:
       type: object
       description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
@@ -137,6 +87,56 @@ components:
           - string
           - 'null'
           description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
+    ErrorRequirement:
+      type: object
+      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
+    GenerateTextResponse:
+      type: object
+      required:
+      - text
+      properties:
+        text:
+          type: string
+          description: The generated text.
+    GenerateTextRequest:
+      type: object
+      required:
+      - prompt
+      properties:
+        prompt:
+          type: string
+          example: Write a 30-second upbeat video script about why the sky is blue.
+          description: The instruction or content to generate text from.
+        system:
+          type:
+          - string
+          - 'null'
+          description: Optional system instructions that steer the model's role, tone, and constraints.
+        quality:
+          $ref: '#/components/schemas/ModelQuality'
+          description: Text generation quality tier. Optional; when omitted, your account's Default AI quality for text is used (change it at https://app.videogen.io/settings/account).
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 2
+          description: Sampling temperature. Higher values produce more varied output. Defaults to the model's default.
+        maxOutputTokens:
+          type: integer
+          minimum: 1
+          maximum: 2000
+          default: 512
+          description: Maximum number of tokens to generate. Defaults to 512.
   securitySchemes:
     bearerAuth:
       type: http

@@ -218,162 +218,24 @@ paths:
                 $ref: '#/components/schemas/ApiError'
 components:
   schemas:
-    FileSource:
+    SearchFilesRequest:
       type: object
-      description: A rendition source for a file (e.g. thumbnail, preview, download). Contains a signed URL and metadata.
       required:
-      - status
+      - query
       properties:
-        status:
+        query:
           type: string
-          enum:
-          - pending
-          - ready
-          - failed
-          - skipped
-          description: '`pending`: asset is still processing or has not been hydrated yet. `ready`: signed URL is available. `failed`: rendition generation failed. `skipped`: rendition does not apply to this file type (e.g. thumbnail for audio).'
-        url:
-          type:
-          - string
-          - 'null'
-          description: Signed URL. Present when status is `ready` and file has been recently hydrated. If missing, call the hydrate endpoint.
-        expiresAt:
-          type:
-          - integer
-          - 'null'
-          description: Seconds since epoch (Unix timestamp) when the signed URL expires.
-        width:
-          type:
-          - integer
-          - 'null'
-          description: Rendition width in pixels, when known.
-        height:
-          type:
-          - integer
-          - 'null'
-          description: Rendition height in pixels, when known.
-        fileBytes:
-          type:
-          - integer
-          - 'null'
-          description: File size in bytes, when known.
-    GetFilesResponse:
-      type: object
-      required:
-      - files
-      - hasMore
-      - nextCursor
-      properties:
-        files:
-          type: array
-          items:
-            $ref: '#/components/schemas/FileInfo'
-        hasMore:
-          type: boolean
-          description: When true, there are more files available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
-        nextCursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
-    FileType:
-      type: string
-      enum:
-      - IMAGE
-      - VIDEO
-      - AUDIO
-      - PDF
-      - SLIDESHOW
-      - TEXT
-      - LOTTIE
-      description: File type. `TEXT` covers plain-text and editor-interchange documents; `LOTTIE` is a JSON animation.
-    FileAnalysisMetadata:
-      type: object
-      description: 'Background analysis state for a file. Background analysis populates `description`, `transcript`, `durationSeconds`, and the search embedding after a file is uploaded or generated; this object lets you render a progress indicator while it runs (and skip rendering once it''s done).
-
-        '
-      required:
-      - analysisLoadingState
-      - analysisProgressPercentage
-      properties:
-        analysisLoadingState:
-          type: string
-          enum:
-          - UNATTEMPTED
-          - LOADING
-          - FULFILLED
-          - REJECTED
-          description: 'Coarse-grained analysis state.
-
-
-            - `UNATTEMPTED`: analysis has not started yet.
-
-            - `LOADING`: analysis is in progress.
-
-            - `FULFILLED`: analysis completed successfully. `description`, `transcript`, and `durationSeconds` are now populated where applicable for the file''s type.
-
-            - `REJECTED`: analysis failed permanently and will not be retried.
-
-            '
-        analysisProgressPercentage:
-          type: number
-          description: Progress in `[0, 100]`. Always `100` when `analysisLoadingState` is `FULFILLED`. Otherwise the most recent in-flight progress reported by the analysis task (or `0` if no progress has been reported yet).
-        analysisAttemptIndex:
+          description: Natural-language search query. The text is embedded and compared against file description vectors using cosine similarity.
+        numResults:
           type: integer
-          description: Zero-based index of the current analysis task attempt. Only present while analysis is still loading (`UNATTEMPTED` or `LOADING`); omitted once analysis reaches a terminal state.
-    Transcript:
-      type: object
-      required:
-      - words
-      description: A transcript of an audio file, as timed words in order.
-      properties:
-        languageCode:
-          type:
-          - string
-          - 'null'
-          description: Optional BCP-47 language code of the spoken audio (e.g. `en`, `es`). Used to tag the transcript's language; omit if unknown.
-        words:
-          type: array
-          items:
-            $ref: '#/components/schemas/TranscriptWord'
-          description: The transcript words, sorted by `startSeconds` and non-overlapping. Must contain at least one word.
-    SearchFilesResponse:
-      type: object
-      required:
-      - results
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/SearchFilesResult'
-    SearchFilesResult:
-      type: object
-      required:
-      - similarity
-      - file
-      properties:
-        similarity:
-          type: number
-          minimum: 0
-          maximum: 1
-          example: 0.82
-          description: Cosine similarity between the query embedding and the file description embedding. Ranges from 0 (no match) to 1 (identical). Values above 0.7 typically indicate strong relevance.
-        file:
-          $ref: '#/components/schemas/FileInfo'
-    ErrorRequirement:
-      type: object
-      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
-        details:
-          type: object
-          additionalProperties:
-            type: string
-          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
+          minimum: 1
+          maximum: 100
+          default: 10
+          description: Number of results to return (1-100). Defaults to 10.
+        selfOnly:
+          type: boolean
+          default: false
+          description: When true, only files created by the calling API key's user are returned. When false (default), all files accessible to the team are included.
     FileInfo:
       type: object
       description: Metadata for a generated file. Obtain ids from tool results or `GET /v1/files`.
@@ -502,42 +364,6 @@ components:
         fileAnalysisMetadata:
           description: Background analysis state for the file (used to populate `description`, `transcript`, `durationSeconds`, and the search embedding). Omitted when the file was returned via a path that does not check analysis progress (e.g. tool-result inline files and webhook payloads).
           $ref: '#/components/schemas/FileAnalysisMetadata'
-    TranscriptWord:
-      type: object
-      required:
-      - startSeconds
-      - endSeconds
-      - word
-      description: A single timed word of a transcript.
-      properties:
-        startSeconds:
-          type: number
-          minimum: 0
-          description: Start time of the word in seconds from the beginning of the audio.
-        endSeconds:
-          type: number
-          description: End time of the word in seconds from the beginning of the audio. Must be greater than `startSeconds`.
-        word:
-          type: string
-          description: The spoken word, used verbatim for narration timing and captions.
-    SearchFilesRequest:
-      type: object
-      required:
-      - query
-      properties:
-        query:
-          type: string
-          description: Natural-language search query. The text is embedded and compared against file description vectors using cosine similarity.
-        numResults:
-          type: integer
-          minimum: 1
-          maximum: 100
-          default: 10
-          description: Number of results to return (1-100). Defaults to 10.
-        selfOnly:
-          type: boolean
-          default: false
-          description: When true, only files created by the calling API key's user are returned. When false (default), all files accessible to the team are included.
     FileUploadResponse:
       type: object
       required:
@@ -550,6 +376,69 @@ components:
         uploadUrl:
           type: string
           description: Pre-signed URL. PUT the raw file bytes to this URL to complete the upload.
+    FileSource:
+      type: object
+      description: A rendition source for a file (e.g. thumbnail, preview, download). Contains a signed URL and metadata.
+      required:
+      - status
+      properties:
+        status:
+          type: string
+          enum:
+          - pending
+          - ready
+          - failed
+          - skipped
+          description: '`pending`: asset is still processing or has not been hydrated yet. `ready`: signed URL is available. `failed`: rendition generation failed. `skipped`: rendition does not apply to this file type (e.g. thumbnail for audio).'
+        url:
+          type:
+          - string
+          - 'null'
+          description: Signed URL. Present when status is `ready` and file has been recently hydrated. If missing, call the hydrate endpoint.
+        expiresAt:
+          type:
+          - integer
+          - 'null'
+          description: Seconds since epoch (Unix timestamp) when the signed URL expires.
+        width:
+          type:
+          - integer
+          - 'null'
+          description: Rendition width in pixels, when known.
+        height:
+          type:
+          - integer
+          - 'null'
+          description: Rendition height in pixels, when known.
+        fileBytes:
+          type:
+          - integer
+          - 'null'
+          description: File size in bytes, when known.
+    CreateFileUploadRequest:
+      type: object
+      required:
+      - displayName
+      properties:
+        type:
+          $ref: '#/components/schemas/FileType'
+          description: The type of file to upload. Optional; when omitted, the type is inferred after upload processing completes.
+        displayName:
+          type: string
+          description: Display name for the uploaded file.
+        isTemporary:
+          type: boolean
+          default: false
+          description: When true, the file is temporary. Temporary files are guaranteed to be available for 24 hours, after which they may be archived at any time. Temporary files are not analyzed (no description, transcript, or embedding will be generated), so they will not appear in search results. Defaults to false.
+        hideFromUi:
+          type: boolean
+          default: false
+          description: When true, the file is hidden from the VideoGen Media page by default. It remains accessible through the API. Defaults to false.
+        transcript:
+          description: Optional pre-computed transcript for an audio or video upload, as timed `words`. When provided, transcription is skipped and caption timing matches your transcript. Ignored for non-audio/video files.
+          anyOf:
+          - $ref: '#/components/schemas/Transcript'
+          - type: 'null'
     ApiError:
       type: object
       description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
@@ -582,53 +471,142 @@ components:
           - string
           - 'null'
           description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
-    CreateFileUploadRequest:
+    ErrorRequirement:
       type: object
+      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
       required:
-      - displayName
+      - type
       properties:
         type:
-          $ref: '#/components/schemas/FileType'
-          description: The type of file to upload. Optional; when omitted, the type is inferred after upload processing completes.
-        displayName:
           type: string
-          description: Display name for the uploaded file.
-        isTemporary:
+          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
+    TranscriptWord:
+      type: object
+      required:
+      - startSeconds
+      - endSeconds
+      - word
+      description: A single timed word of a transcript.
+      properties:
+        startSeconds:
+          type: number
+          minimum: 0
+          description: Start time of the word in seconds from the beginning of the audio.
+        endSeconds:
+          type: number
+          description: End time of the word in seconds from the beginning of the audio. Must be greater than `startSeconds`.
+        word:
+          type: string
+          description: The spoken word, used verbatim for narration timing and captions.
+    Transcript:
+      type: object
+      required:
+      - words
+      description: A transcript of an audio file, as timed words in order.
+      properties:
+        languageCode:
+          type:
+          - string
+          - 'null'
+          description: Optional BCP-47 language code of the spoken audio (e.g. `en`, `es`). Used to tag the transcript's language; omit if unknown.
+        words:
+          type: array
+          items:
+            $ref: '#/components/schemas/TranscriptWord'
+          description: The transcript words, sorted by `startSeconds` and non-overlapping. Must contain at least one word.
+    SearchFilesResult:
+      type: object
+      required:
+      - similarity
+      - file
+      properties:
+        similarity:
+          type: number
+          minimum: 0
+          maximum: 1
+          example: 0.82
+          description: Cosine similarity between the query embedding and the file description embedding. Ranges from 0 (no match) to 1 (identical). Values above 0.7 typically indicate strong relevance.
+        file:
+          $ref: '#/components/schemas/FileInfo'
+    GetFilesResponse:
+      type: object
+      required:
+      - files
+      - hasMore
+      - nextCursor
+      properties:
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileInfo'
+        hasMore:
           type: boolean
-          default: false
-          description: When true, the file is temporary. Temporary files are guaranteed to be available for 24 hours, after which they may be archived at any time. Temporary files are not analyzed (no description, transcript, or embedding will be generated), so they will not appear in search results. Defaults to false.
-        hideFromUi:
-          type: boolean
-          default: false
-          description: When true, the file is hidden from the VideoGen Media page by default. It remains accessible through the API. Defaults to false.
-        transcript:
-          description: Optional pre-computed transcript for an audio or video upload, as timed `words`. When provided, transcription is skipped and caption timing matches your transcript. Ignored for non-audio/video files.
-          anyOf:
-          - $ref: '#/components/schemas/Transcript'
-          - type: 'null'
+          description: When true, there are more files available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
+        nextCursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
+    FileAnalysisMetadata:
+      type: object
+      description: 'Background analysis state for a file. Background analysis populates `description`, `transcript`, `durationSeconds`, and the search embedding after a file is uploaded or generated; this object lets you render a progress indicator while it runs (and skip rendering once it''s done).
+
+        '
+      required:
+      - analysisLoadingState
+      - analysisProgressPercentage
+      properties:
+        analysisLoadingState:
+          type: string
+          enum:
+          - UNATTEMPTED
+          - LOADING
+          - FULFILLED
+          - REJECTED
+          description: 'Coarse-grained analysis state.
+
+
+            - `UNATTEMPTED`: analysis has not started yet.
+
+            - `LOADING`: analysis is in progress.
+
+            - `FULFILLED`: analysis completed successfully. `description`, `transcript`, and `durationSeconds` are now populated where applicable for the file''s type.
+
+            - `REJECTED`: analysis failed permanently and will not be retried.
+
+            '
+        analysisProgressPercentage:
+          type: number
+          description: Progress in `[0, 100]`. Always `100` when `analysisLoadingState` is `FULFILLED`. Otherwise the most recent in-flight progress reported by the analysis task (or `0` if no progress has been reported yet).
+        analysisAttemptIndex:
+          type: integer
+          description: Zero-based index of the current analysis task attempt. Only present while analysis is still loading (`UNATTEMPTED` or `LOADING`); omitted once analysis reaches a terminal state.
+    SearchFilesResponse:
+      type: object
+      required:
+      - results
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchFilesResult'
+    FileType:
+      type: string
+      enum:
+      - IMAGE
+      - VIDEO
+      - AUDIO
+      - PDF
+      - SLIDESHOW
+      - TEXT
+      - LOTTIE
+      description: File type. `TEXT` covers plain-text and editor-interchange documents; `LOTTIE` is a JSON animation.
   parameters:
-    SelfOnlyQuery:
-      name: selfOnly
-      in: query
-      required: false
-      schema:
-        type: boolean
-        default: false
-      description: When true, returns only items created by the API key's owner. When false (default), returns all items accessible to the team.
-    PaginationCursor:
-      name: cursor
-      in: query
-      required: false
-      schema:
-        type: string
-      description: Opaque pagination cursor returned as `nextCursor` by the previous page. Omit on the first request. Cursors are tied to the endpoint that produced them and must be passed unmodified. See [Pagination](/pagination).
-    FileIdPath:
-      name: fileId
-      in: path
-      required: true
-      schema:
-        type: string
-      description: The file id (e.g. `vg_file_...`).
     IncludeExportFilesQuery:
       name: includeExportFiles
       in: query
@@ -637,6 +615,20 @@ components:
         type: boolean
         default: false
       description: 'When true, includes export files: the raw output files of your exports (the rendered MP4 you download from an export). When false (default), they are omitted.'
+    FileIdPath:
+      name: fileId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The file id (e.g. `vg_file_...`).
+    PaginationCursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Opaque pagination cursor returned as `nextCursor` by the previous page. Omit on the first request. Cursors are tied to the endpoint that produced them and must be passed unmodified. See [Pagination](/pagination).
     PaginationLimit:
       name: limit
       in: query
@@ -647,6 +639,14 @@ components:
         maximum: 200
         default: 50
       description: Maximum number of items to return in the page. Defaults to 50; capped at 200. See [Pagination](/pagination).
+    SelfOnlyQuery:
+      name: selfOnly
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+      description: When true, returns only items created by the API key's owner. When false (default), returns all items accessible to the team.
     IncludeProjectFilesQuery:
       name: includeProjectFiles
       in: query
