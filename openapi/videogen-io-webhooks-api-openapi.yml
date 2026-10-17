@@ -85,6 +85,31 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 components:
+  parameters:
+    PaginationCursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Opaque pagination cursor returned as `nextCursor` by the previous page. Omit on the first request. Cursors are tied to the endpoint that produced them and must be passed unmodified. See [Pagination](/pagination).
+    PaginationLimit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+      description: Maximum number of items to return in the page. Defaults to 50; capped at 200. See [Pagination](/pagination).
+    WebhookEndpointIdPath:
+      name: endpointId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The webhook endpoint id (e.g. `ep_...`) returned by `POST /v1/webhooks/endpoints`.
   schemas:
     CreateWebhookEndpointRequest:
       type: object
@@ -137,39 +162,6 @@ components:
           - string
           - 'null'
           description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
-    ErrorRequirement:
-      type: object
-      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
-        details:
-          type: object
-          additionalProperties:
-            type: string
-          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
-    WebhookEndpointListResponse:
-      type: object
-      required:
-      - endpoints
-      - hasMore
-      - nextCursor
-      properties:
-        endpoints:
-          type: array
-          items:
-            $ref: '#/components/schemas/WebhookEndpoint'
-        hasMore:
-          type: boolean
-          description: When true, there are more endpoints available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
-        nextCursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
     WebhookEventName:
       type: string
       description: All webhook event types. Use when creating or listing webhook endpoints.
@@ -192,6 +184,39 @@ components:
       - file.download_ready
       - file.analysis_completed
       - file.analysis_failed
+    WebhookEndpointListResponse:
+      type: object
+      required:
+      - endpoints
+      - hasMore
+      - nextCursor
+      properties:
+        endpoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookEndpoint'
+        hasMore:
+          type: boolean
+          description: When true, there are more endpoints available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
+        nextCursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
+    ErrorRequirement:
+      type: object
+      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
     WebhookEndpoint:
       type: object
       required:
@@ -223,31 +248,6 @@ components:
         signingSecretLast4:
           type: string
           description: Last four characters of the signing secret, for display purposes.
-  parameters:
-    WebhookEndpointIdPath:
-      name: endpointId
-      in: path
-      required: true
-      schema:
-        type: string
-      description: The webhook endpoint id (e.g. `ep_...`) returned by `POST /v1/webhooks/endpoints`.
-    PaginationLimit:
-      name: limit
-      in: query
-      required: false
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 200
-        default: 50
-      description: Maximum number of items to return in the page. Defaults to 50; capped at 200. See [Pagination](/pagination).
-    PaginationCursor:
-      name: cursor
-      in: query
-      required: false
-      schema:
-        type: string
-      description: Opaque pagination cursor returned as `nextCursor` by the previous page. Omit on the first request. Cursors are tied to the endpoint that produced them and must be passed unmodified. See [Pagination](/pagination).
   securitySchemes:
     bearerAuth:
       type: http

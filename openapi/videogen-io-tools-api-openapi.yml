@@ -452,143 +452,22 @@ paths:
                 $ref: '#/components/schemas/ApiError'
 components:
   schemas:
-    GenerateVideoClipRequest:
+    MotionGraphicSubToolModes:
       type: object
-      description: At least one of `prompt`, `startFrameFileId`, `imageFileIds`, `videoFileIds`, `audioFileIds`, or `spokenDialogue` must be provided.
+      description: Per-capability access modes for a motion graphic. Any omitted capability defaults to AUTO.
       properties:
-        prompt:
-          type: string
-          example: A golden retriever running through a sunlit meadow in slow motion, cinematic
-          description: Text prompt describing the video to generate. Optional when reference media, `startFrameFileId`, or `spokenDialogue` is provided. Describe the video in plain language; any reference media you provide is incorporated automatically.
-        startFrameFileId:
-          type: string
-          description: Optional file id of the opening-frame still (e.g. `vg_file_...`). Upload first via `POST /v1/files/upload`. When set, this image is the first frame of the clip. If the same id also appears in `imageFileIds`, it is used only as the opening frame and dropped from the reference list. Can be the only input (prompt optional).
-        imageFileIds:
-          type: array
-          items:
-            type: string
-          maxItems: 4
-          description: Optional file ids of reference images (e.g. `["vg_file_..."]`). Upload files first via `POST /v1/files/upload`, then pass the returned ids here. When provided, the images are used as visual guidance. To animate a specific still as the opening frame, pass it as `startFrameFileId` instead.
-        videoFileIds:
-          type: array
-          items:
-            type: string
-          maxItems: 4
-          description: Optional file ids of reference videos (e.g. `["vg_file_..."]`). Upload files first via `POST /v1/files/upload`, then pass the returned ids here. They are used as motion or style guidance for the generated video.
-        audioFileIds:
-          type: array
-          items:
-            type: string
-          maxItems: 4
-          description: Optional file ids of reference audio clips (e.g. `["vg_file_..."]`) used for lip-sync from that recording. Upload files first via `POST /v1/files/upload`, then pass the returned ids here. To have the model speak a line it generates itself, pass `spokenDialogue` instead (or in addition).
-        spokenDialogue:
-          type: string
-          description: Optional exact line the subject should speak as native, lip-synced speech in the generated clip. The model synthesizes the voice from this text. Can be the only input. Combine with a visual `prompt`, `startFrameFileId`, or reference media. Combine with `audioFileIds` when you also have a reference recording.
-        voiceDescription:
-          type: string
-          description: Optional natural-language description of the voice that speaks `spokenDialogue` (for example, a warm, confident young man's voice). Used when `spokenDialogue` is set. When omitted, a clear natural voice is used.
-        generateAudio:
-          type: boolean
-          default: false
-          description: When true, the generated video is guaranteed to include audio. When false, audio may still be present. Defaults to false.
-        suppressBackgroundMusic:
-          type: boolean
-          default: false
-          description: When true, the generated clip will not include a musical soundtrack. Spoken dialogue and environmental sound are still allowed. Use this when you will add background music separately (for example at the project level). Defaults to false.
-        durationSeconds:
-          type:
-          - integer
-          - 'null'
-          minimum: 1
-          maximum: 30
-          description: Optional clip length in whole seconds (1 to 30). Omit or pass null for Auto (duration is estimated at generate time so spoken text or the visual beat fits, clamped to the selected quality's supported range). When set, that length is used as-is. This endpoint produces a single short clip. For longer, multi-scene, professionally edited videos, use a video workflow such as `POST /v1/workflows/script-to-video`.
-        aspectRatio:
-          $ref: '#/components/schemas/AspectRatio'
-          description: Aspect ratio for the generated video. Defaults to 16:9 when omitted.
-        quality:
-          $ref: '#/components/schemas/ModelQuality'
-          description: Video generation quality tier (`LOW`, `STANDARD`, `HIGH`, or `MAX`). Optional; when omitted, your account's Default AI quality for video is used (change it at https://app.videogen.io/settings/account).
-        contentPolicyConfig:
-          $ref: '#/components/schemas/ContentPolicyConfig'
-        watermarkMode:
-          $ref: '#/components/schemas/WatermarkMode'
-        numResults:
-          type: integer
-          minimum: 1
-          maximum: 100
-          default: 1
-          description: Number of output results to generate. Defaults to 1.
-        isOutputTemporary:
-          type: boolean
-          default: false
-          description: When true, generated files are temporary. Temporary files are guaranteed to be available for 24 hours, after which they may be archived at any time. Temporary files are not analyzed (no description, transcript, or embedding will be generated), so they will not appear in search results. Defaults to false.
-        hideFromUi:
-          type: boolean
-          default: false
-          description: When true, generated files are hidden from the VideoGen Media page by default. They remain accessible through the API. Defaults to false.
-    AspectRatio:
-      type: object
-      required:
-      - width
-      - height
-      description: Aspect ratio as a width:height pair (e.g. 16 and 9 for 16:9). Not pixel dimensions.
-      properties:
-        width:
-          type: integer
-          minimum: 1
-        height:
-          type: integer
-          minimum: 1
-    GenerateAvatarRequest:
-      type: object
-      required:
-      - actorEntityId
-      - audioFileId
-      description: Generate a talking-head avatar from an ACTOR entity and audio.
-      properties:
-        actorEntityId:
-          type: string
-          description: The id of a built-in stock actor or an ACTOR entity (e.g. `vg_enti_...`) with an image reference.
-        avatarQuality:
-          $ref: '#/components/schemas/ModelQuality'
-          description: Avatar generation quality tier. Optional; when omitted, your account's Default AI quality for avatars is used.
-        audioFileId:
-          type: string
-          description: File id of an AUDIO file (e.g. `vg_file_...`), typically from a prior text-to-speech result. Upload a file first via `POST /v1/files/upload` or generate one with `POST /v1/tools/text-to-speech`, then pass the returned id here.
-        watermarkMode:
-          $ref: '#/components/schemas/WatermarkMode'
-        numResults:
-          type: integer
-          minimum: 1
-          maximum: 100
-          default: 1
-          description: Number of output results to generate. Defaults to 1.
-        isOutputTemporary:
-          type: boolean
-          default: false
-          description: When true, generated files are temporary. Temporary files are guaranteed to be available for 24 hours, after which they may be archived at any time. Temporary files are not analyzed (no description, transcript, or embedding will be generated), so they will not appear in search results. Defaults to false.
-        hideFromUi:
-          type: boolean
-          default: false
-          description: When true, generated files are hidden from the VideoGen Media page by default. They remain accessible through the API. Defaults to false.
-    PronunciationReplacement:
-      type: object
-      required:
-      - original
-      - replacement
-      properties:
-        original:
-          type: string
-        replacement:
-          type: string
-    WatermarkMode:
-      type: string
-      enum:
-      - NONE
-      - VIDEO_GEN
-      - AUTO
-      default: AUTO
-      description: Controls whether the VideoGen watermark is applied to the output. `AUTO` applies the watermark unless you have a Pro plan. `VIDEO_GEN` always applies it. `NONE` removes the watermark (requires Pro; returns an error if you don't have it).
+        generateImages:
+          $ref: '#/components/schemas/MotionGraphicSubToolMode'
+          description: Whether the motion graphic may generate images. Defaults to AUTO.
+        generateVideoClips:
+          $ref: '#/components/schemas/MotionGraphicSubToolMode'
+          description: Whether the motion graphic may generate video clips. Requires a paid plan. Defaults to AUTO.
+        generateVoiceover:
+          $ref: '#/components/schemas/MotionGraphicSubToolMode'
+          description: Whether the motion graphic may generate voiceover audio. Defaults to AUTO.
+        searchStockMedia:
+          $ref: '#/components/schemas/MotionGraphicSubToolMode'
+          description: Whether the motion graphic may search stock media. Defaults to AUTO.
     FileInfo:
       type: object
       description: Metadata for a generated file. Obtain ids from tool results or `GET /v1/files`.
@@ -717,92 +596,161 @@ components:
         fileAnalysisMetadata:
           description: Background analysis state for the file (used to populate `description`, `transcript`, `durationSeconds`, and the search embedding). Omitted when the file was returned via a path that does not check analysis progress (e.g. tool-result inline files and webhook payloads).
           $ref: '#/components/schemas/FileAnalysisMetadata'
-    MotionGraphicSubToolModes:
+    FileAnalysisMetadata:
       type: object
-      description: Per-capability access modes for a motion graphic. Any omitted capability defaults to AUTO.
+      description: 'Background analysis state for a file. Background analysis populates `description`, `transcript`, `durationSeconds`, and the search embedding after a file is uploaded or generated; this object lets you render a progress indicator while it runs (and skip rendering once it''s done).
+
+        '
+      required:
+      - analysisLoadingState
+      - analysisProgressPercentage
       properties:
-        generateImages:
-          $ref: '#/components/schemas/MotionGraphicSubToolMode'
-          description: Whether the motion graphic may generate images. Defaults to AUTO.
-        generateVideoClips:
-          $ref: '#/components/schemas/MotionGraphicSubToolMode'
-          description: Whether the motion graphic may generate video clips. Requires a paid plan. Defaults to AUTO.
-        generateVoiceover:
-          $ref: '#/components/schemas/MotionGraphicSubToolMode'
-          description: Whether the motion graphic may generate voiceover audio. Defaults to AUTO.
-        searchStockMedia:
-          $ref: '#/components/schemas/MotionGraphicSubToolMode'
-          description: Whether the motion graphic may search stock media. Defaults to AUTO.
-    StartToolExecutionResponse:
+        analysisLoadingState:
+          type: string
+          enum:
+          - UNATTEMPTED
+          - LOADING
+          - FULFILLED
+          - REJECTED
+          description: 'Coarse-grained analysis state.
+
+
+            - `UNATTEMPTED`: analysis has not started yet.
+
+            - `LOADING`: analysis is in progress.
+
+            - `FULFILLED`: analysis completed successfully. `description`, `transcript`, and `durationSeconds` are now populated where applicable for the file''s type.
+
+            - `REJECTED`: analysis failed permanently and will not be retried.
+
+            '
+        analysisProgressPercentage:
+          type: number
+          description: Progress in `[0, 100]`. Always `100` when `analysisLoadingState` is `FULFILLED`. Otherwise the most recent in-flight progress reported by the analysis task (or `0` if no progress has been reported yet).
+        analysisAttemptIndex:
+          type: integer
+          description: Zero-based index of the current analysis task attempt. Only present while analysis is still loading (`UNATTEMPTED` or `LOADING`); omitted once analysis reaches a terminal state.
+    GenerateAvatarRequest:
       type: object
-      description: Returned when a tool execution is started. Use `toolExecutionId` to poll for results or cancel.
+      required:
+      - actorEntityId
+      - audioFileId
+      description: Generate a talking-head avatar from an ACTOR entity and audio.
+      properties:
+        actorEntityId:
+          type: string
+          description: The id of a built-in stock actor or an ACTOR entity (e.g. `vg_enti_...`) with an image reference.
+        avatarQuality:
+          $ref: '#/components/schemas/ModelQuality'
+          description: Avatar generation quality tier. Optional; when omitted, your account's Default AI quality for avatars is used.
+        audioFileId:
+          type: string
+          description: File id of an AUDIO file (e.g. `vg_file_...`), typically from a prior text-to-speech result. Upload a file first via `POST /v1/files/upload` or generate one with `POST /v1/tools/text-to-speech`, then pass the returned id here.
+        watermarkMode:
+          $ref: '#/components/schemas/WatermarkMode'
+        numResults:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 1
+          description: Number of output results to generate. Defaults to 1.
+        isOutputTemporary:
+          type: boolean
+          default: false
+          description: When true, generated files are temporary. Temporary files are guaranteed to be available for 24 hours, after which they may be archived at any time. Temporary files are not analyzed (no description, transcript, or embedding will be generated), so they will not appear in search results. Defaults to false.
+        hideFromUi:
+          type: boolean
+          default: false
+          description: When true, generated files are hidden from the VideoGen Media page by default. They remain accessible through the API. Defaults to false.
+    ExecutedTool:
+      type: object
       required:
       - toolExecutionId
+      - status
+      - toolType
+      - progressPercentage
+      - attemptIndex
+      - results
+      - error
       properties:
         toolExecutionId:
           type: string
-          description: Execution id (e.g. `vg_tool_...`).
-    FileSource:
-      type: object
-      description: A rendition source for a file (e.g. thumbnail, preview, download). Contains a signed URL and metadata.
-      required:
-      - status
-      properties:
+          description: Execution id matching the original request.
         status:
+          $ref: '#/components/schemas/JobStatus'
+        toolType:
           type: string
-          enum:
-          - pending
-          - ready
-          - failed
-          - skipped
-          description: '`pending`: asset is still processing or has not been hydrated yet. `ready`: signed URL is available. `failed`: rendition generation failed. `skipped`: rendition does not apply to this file type (e.g. thumbnail for audio).'
-        url:
+          description: Tool name (e.g. `GENERATE_IMAGE`, `TEXT_TO_SPEECH`).
+        progressPercentage:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Completion progress for the current attempt (0-100). Always `100` when `status` is `succeeded`.
+        attemptIndex:
+          type: integer
+          minimum: 0
+          description: Zero-based index of the current or most recent execution attempt.
+        results:
+          type: array
+          description: One entry per generated result. Always present; empty until `status` is `succeeded`, then one entry per generated file (each with signed URLs and a hydrated `file`).
+          items:
+            $ref: '#/components/schemas/ToolSuccessResult'
+        error:
+          description: Error details. Always present; `null` unless `status` is `failed`.
+          anyOf:
+          - $ref: '#/components/schemas/ApiError'
+          - type: 'null'
+    ToolSuccessResult:
+      type: object
+      description: Result for a single generated file. Only appears inside a succeeded execution's `results`, so every field below is always present.
+      required:
+      - fileId
+      - type
+      - downloadUrl
+      - downloadUrlExpiresAt
+      - thumbnailUrl
+      - thumbnailUrlExpiresAt
+      - file
+      properties:
+        fileId:
+          type: string
+          description: File id for the generated asset.
+        type:
+          $ref: '#/components/schemas/FileType'
+          description: File type.
+        downloadUrl:
           type:
           - string
           - 'null'
-          description: Signed URL. Present when status is `ready` and file has been recently hydrated. If missing, call the hydrate endpoint.
-        expiresAt:
+          format: uri
+          description: Private signed download URL for the generated file, valid for 7 days from when it was signed. Provided at the top level for convenience so you don't have to read it out of `file`. When you GET a single execution it is automatically re-signed if within an hour of expiring; list endpoints do not re-sign, so there it may be expired (check `downloadUrlExpiresAt`). See `downloadUrlExpiresAt` for the exact expiry. Null only in the rare case that the highest-quality rendition is still finalizing.
+        downloadUrlExpiresAt:
           type:
           - integer
           - 'null'
-          description: Seconds since epoch (Unix timestamp) when the signed URL expires.
-        width:
+          description: Seconds since epoch (Unix timestamp) when `downloadUrl` expires. Null only when `downloadUrl` is null.
+        thumbnailUrl:
+          type:
+          - string
+          - 'null'
+          format: uri
+          description: Private signed thumbnail URL for the generated file, valid for 7 days from when it was signed. Provided at the top level for convenience so you don't have to read it out of `file`. Re-signed on the same terms as `downloadUrl` (single-execution GET re-signs when near expiry; list endpoints do not). Null for file types that have no thumbnail (e.g. audio).
+        thumbnailUrlExpiresAt:
           type:
           - integer
           - 'null'
-          description: Rendition width in pixels, when known.
-        height:
-          type:
-          - integer
-          - 'null'
-          description: Rendition height in pixels, when known.
-        fileBytes:
-          type:
-          - integer
-          - 'null'
-          description: File size in bytes, when known.
-    GenerateSoundEffectRequest:
+          description: Seconds since epoch (Unix timestamp) when `thumbnailUrl` expires. Null when there is no thumbnail URL.
+        file:
+          description: Hydrated file metadata with signed download URLs (always present and hydrated for a succeeded result). Its signed URLs follow the same 24-hour validity and automatic re-signing as `downloadUrl`.
+          $ref: '#/components/schemas/FileInfo'
+    GenerateMusicRequest:
       type: object
       required:
       - prompt
       properties:
         prompt:
           type: string
-          description: A text description of the sound effect to generate.
-        durationSeconds:
-          type:
-          - number
-          - 'null'
-          minimum: 1
-          maximum: 30
-          description: Desired length of the sound effect in seconds, between 1 and 30. Defaults to about 10 seconds when omitted.
-        promptInfluence:
-          type:
-          - number
-          - 'null'
-          minimum: 0
-          maximum: 1
-          description: How closely the generated sound effect follows the prompt, between 0 (more creative, more variation) and 1 (more literal, less variation). Defaults to a balanced value when omitted.
+          description: A text description of the music to generate. Include genre, mood, instrumentation, and tempo for best results.
         numResults:
           type: integer
           minimum: 1
@@ -817,134 +765,17 @@ components:
           type: boolean
           default: false
           description: When true, generated files are hidden from the VideoGen Media page by default. They remain accessible through the API. Defaults to false.
-    ImageAssetRequest:
-      type: object
-      required:
-      - imageFileId
-      properties:
-        imageFileId:
-          type: string
-          description: File id of the source image (e.g. `vg_file_...`). Upload a file first via `POST /v1/files/upload`, then pass the returned id here.
-        watermarkMode:
-          $ref: '#/components/schemas/WatermarkMode'
-        numResults:
-          type: integer
-          minimum: 1
-          maximum: 100
-          default: 1
-          description: Number of output results to generate. Defaults to 1.
-        isOutputTemporary:
-          type: boolean
-          default: false
-          description: When true, generated files are temporary. Temporary files are guaranteed to be available for 24 hours, after which they may be archived at any time. Temporary files are not analyzed (no description, transcript, or embedding will be generated), so they will not appear in search results. Defaults to false.
-        hideFromUi:
-          type: boolean
-          default: false
-          description: When true, generated files are hidden from the VideoGen Media page by default. They remain accessible through the API. Defaults to false.
-    ApiError:
-      type: object
-      description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
-
-
-        - `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.
-
-
-        Common `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.
-
-        '
-      required:
-      - message
-      properties:
-        message:
-          type: string
-          description: Human-readable error description. For display and logging only; do not branch on its exact text.
-        code:
-          type:
-          - string
-          - 'null'
-          description: Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies.
-        requirement:
-          description: What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.
-          anyOf:
-          - $ref: '#/components/schemas/ErrorRequirement'
-          - type: 'null'
-        internalErrorCode:
-          type:
-          - string
-          - 'null'
-          description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
-    ErrorRequirement:
-      type: object
-      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
-        details:
-          type: object
-          additionalProperties:
-            type: string
-          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
-    VideoAssetRequest:
-      type: object
-      required:
-      - videoFileId
-      properties:
-        videoFileId:
-          type: string
-          description: File id of the source video (e.g. `vg_file_...`). Upload a file first via `POST /v1/files/upload`, then pass the returned id here.
-        watermarkMode:
-          $ref: '#/components/schemas/WatermarkMode'
-        numResults:
-          type: integer
-          minimum: 1
-          maximum: 100
-          default: 1
-          description: Number of output results to generate. Defaults to 1.
-        isOutputTemporary:
-          type: boolean
-          default: false
-          description: When true, generated files are temporary. Temporary files are guaranteed to be available for 24 hours, after which they may be archived at any time. Temporary files are not analyzed (no description, transcript, or embedding will be generated), so they will not appear in search results. Defaults to false.
-        hideFromUi:
-          type: boolean
-          default: false
-          description: When true, generated files are hidden from the VideoGen Media page by default. They remain accessible through the API. Defaults to false.
-    TranscriptWord:
-      type: object
-      required:
-      - startSeconds
-      - endSeconds
-      - word
-      description: A single timed word of a transcript.
-      properties:
-        startSeconds:
-          type: number
-          minimum: 0
-          description: Start time of the word in seconds from the beginning of the audio.
-        endSeconds:
-          type: number
-          description: End time of the word in seconds from the beginning of the audio. Must be greater than `startSeconds`.
-        word:
-          type: string
-          description: The spoken word, used verbatim for narration timing and captions.
-    Transcript:
-      type: object
-      required:
-      - words
-      description: A transcript of an audio file, as timed words in order.
-      properties:
-        languageCode:
-          type:
-          - string
-          - 'null'
-          description: Optional BCP-47 language code of the spoken audio (e.g. `en`, `es`). Used to tag the transcript's language; omit if unknown.
-        words:
-          type: array
-          items:
-            $ref: '#/components/schemas/TranscriptWord'
-          description: The transcript words, sorted by `startSeconds` and non-overlapping. Must contain at least one word.
+    FileType:
+      type: string
+      enum:
+      - IMAGE
+      - VIDEO
+      - AUDIO
+      - PDF
+      - SLIDESHOW
+      - TEXT
+      - LOTTIE
+      description: File type. `TEXT` covers plain-text and editor-interchange documents; `LOTTIE` is a JSON animation.
     GenerateMotionGraphicRequest:
       type: object
       required:
@@ -996,6 +827,327 @@ components:
           type: boolean
           default: false
           description: When true, generated files are hidden from the VideoGen Media page by default. They remain accessible through the API. Defaults to false.
+    MotionGraphicSubToolMode:
+      type: string
+      enum:
+      - AUTO
+      - ENABLED
+      - DISABLED
+      description: Access mode for a motion graphic capability. AUTO uses the capability only when it is available on your plan (generated video clips require a paid plan). ENABLED forces the capability on and returns an upgrade error if your plan lacks it. DISABLED prevents the motion graphic from using the capability.
+    Transcript:
+      type: object
+      required:
+      - words
+      description: A transcript of an audio file, as timed words in order.
+      properties:
+        languageCode:
+          type:
+          - string
+          - 'null'
+          description: Optional BCP-47 language code of the spoken audio (e.g. `en`, `es`). Used to tag the transcript's language; omit if unknown.
+        words:
+          type: array
+          items:
+            $ref: '#/components/schemas/TranscriptWord'
+          description: The transcript words, sorted by `startSeconds` and non-overlapping. Must contain at least one word.
+    WatermarkMode:
+      type: string
+      enum:
+      - NONE
+      - VIDEO_GEN
+      - AUTO
+      default: AUTO
+      description: Controls whether the VideoGen watermark is applied to the output. `AUTO` applies the watermark unless you have a Pro plan. `VIDEO_GEN` always applies it. `NONE` removes the watermark (requires Pro; returns an error if you don't have it).
+    ImageAssetRequest:
+      type: object
+      required:
+      - imageFileId
+      properties:
+        imageFileId:
+          type: string
+          description: File id of the source image (e.g. `vg_file_...`). Upload a file first via `POST /v1/files/upload`, then pass the returned id here.
+        watermarkMode:
+          $ref: '#/components/schemas/WatermarkMode'
+        numResults:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 1
+          description: Number of output results to generate. Defaults to 1.
+        isOutputTemporary:
+          type: boolean
+          default: false
+          description: When true, generated files are temporary. Temporary files are guaranteed to be available for 24 hours, after which they may be archived at any time. Temporary files are not analyzed (no description, transcript, or embedding will be generated), so they will not appear in search results. Defaults to false.
+        hideFromUi:
+          type: boolean
+          default: false
+          description: When true, generated files are hidden from the VideoGen Media page by default. They remain accessible through the API. Defaults to false.
+    ErrorRequirement:
+      type: object
+      description: What is needed to resolve an error, when it can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on or upgrading the plan).
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          description: Machine-readable requirement type in snake_case (e.g. `purchase_add_on`, `upgrade_plan`).
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          description: Key-value pairs with requirement-specific context (e.g. the add-on id to purchase).
+    ModelQuality:
+      type: string
+      enum:
+      - LOW
+      - STANDARD
+      - HIGH
+      - MAX
+      description: 'AI generation quality tier, shared across every generative feature (image, video, text, and so on). `LOW` is fastest and cheapest, `STANDARD` balances quality and cost, `HIGH` is higher quality, and `MAX` is the highest quality.
+
+
+        When a request omits the quality field, VideoGen falls back to your account''s **Default AI quality** for that feature, which you can change at [Account settings](https://app.videogen.io/settings/account). Not every feature supports every tier; unsupported tiers are rejected with an error (see each field''s description).
+
+        '
+    PronunciationReplacement:
+      type: object
+      required:
+      - original
+      - replacement
+      properties:
+        original:
+          type: string
+        replacement:
+          type: string
+    ToolExecutionListResponse:
+      type: object
+      description: Paginated list of API-started tool executions, most recently created first.
+      required:
+      - toolExecutions
+      - hasMore
+      - nextCursor
+      properties:
+        toolExecutions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExecutedTool'
+        hasMore:
+          type: boolean
+          description: When true, there are more executions available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
+        nextCursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
+    GenerateVideoClipRequest:
+      type: object
+      description: At least one of `prompt`, `startFrameFileId`, `imageFileIds`, `videoFileIds`, `audioFileIds`, or `spokenDialogue` must be provided.
+      properties:
+        prompt:
+          type: string
+          example: A golden retriever running through a sunlit meadow in slow motion, cinematic
+          description: Text prompt describing the video to generate. Optional when reference media, `startFrameFileId`, or `spokenDialogue` is provided. Describe the video in plain language; any reference media you provide is incorporated automatically.
+        startFrameFileId:
+          type: string
+          description: Optional file id of the opening-frame still (e.g. `vg_file_...`). Upload first via `POST /v1/files/upload`. When set, this image is the first frame of the clip. If the same id also appears in `imageFileIds`, it is used only as the opening frame and dropped from the reference list. Can be the only input (prompt optional).
+        imageFileIds:
+          type: array
+          items:
+            type: string
+          maxItems: 4
+          description: Optional file ids of reference images (e.g. `["vg_file_..."]`). Upload files first via `POST /v1/files/upload`, then pass the returned ids here. When provided, the images are used as visual guidance. To animate a specific still as the opening frame, pass it as `startFrameFileId` instead.
+        videoFileIds:
+          type: array
+          items:
+            type: string
+          maxItems: 4
+          description: Optional file ids of reference videos (e.g. `["vg_file_..."]`). Upload files first via `POST /v1/files/upload`, then pass the returned ids here. They are used as motion or style guidance for the generated video.
+        audioFileIds:
+          type: array
+          items:
+            type: string
+          maxItems: 4
+          description: Optional file ids of reference audio clips (e.g. `["vg_file_..."]`) used for lip-sync from that recording. Upload files first via `POST /v1/files/upload`, then pass the returned ids here. To have the model speak a line it generates itself, pass `spokenDialogue` instead (or in addition).
+        spokenDialogue:
+          type: string
+          description: Optional exact line the subject should speak as native, lip-synced speech in the generated clip. The model synthesizes the voice from this text. Can be the only input. Combine with a visual `prompt`, `startFrameFileId`, or reference media. Combine with `audioFileIds` when you also have a reference recording.
+        voiceDescription:
+          type: string
+          description: Optional natural-language description of the voice that speaks `spokenDialogue` (for example, a warm, confident young man's voice). Used when `spokenDialogue` is set. When omitted, a clear natural voice is used.
+        generateAudio:
+          type: boolean
+          default: false
+          description: When true, the generated video is guaranteed to include audio. When false, audio may still be present. Defaults to false.
+        suppressBackgroundMusic:
+          type: boolean
+          default: false
+          description: When true, the generated clip will not include a musical soundtrack. Spoken dialogue and environmental sound are still allowed. Use this when you will add background music separately (for example at the project level). Defaults to false.
+        durationSeconds:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+          maximum: 30
+          description: Optional clip length in whole seconds (1 to 30). Omit or pass null for Auto (duration is estimated at generate time so spoken text or the visual beat fits, clamped to the selected quality's supported range). When set, that length is used as-is. This endpoint produces a single short clip. For longer, multi-scene, professionally edited videos, use a video workflow such as `POST /v1/workflows/script-to-video`.
+        aspectRatio:
+          $ref: '#/components/schemas/AspectRatio'
+          description: Aspect ratio for the generated video. Defaults to 16:9 when omitted.
+        quality:
+          $ref: '#/components/schemas/ModelQuality'
+          description: Video generation quality tier (`LOW`, `STANDARD`, `HIGH`, or `MAX`). Optional; when omitted, your account's Default AI quality for video is used (change it at https://app.videogen.io/settings/account).
+        contentPolicyConfig:
+          $ref: '#/components/schemas/ContentPolicyConfig'
+        watermarkMode:
+          $ref: '#/components/schemas/WatermarkMode'
+        numResults:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 1
+          description: Number of output results to generate. Defaults to 1.
+        isOutputTemporary:
+          type: boolean
+          default: false
+          description: When true, generated files are temporary. Temporary files are guaranteed to be available for 24 hours, after which they may be archived at any time. Temporary files are not analyzed (no description, transcript, or embedding will be generated), so they will not appear in search results. Defaults to false.
+        hideFromUi:
+          type: boolean
+          default: false
+          description: When true, generated files are hidden from the VideoGen Media page by default. They remain accessible through the API. Defaults to false.
+    ApiError:
+      type: object
+      description: 'Standard error body returned with every non-2xx response (the `default` response of every operation). The HTTP status code conveys the error class; this body carries the details:
+
+
+        - `400` invalid request, `401` missing or invalid API key, `403` not permitted (e.g. plan or add-on required, see `requirement`), `404` not found, `409` conflict, `429` rate limited or out of credits, `5xx` server error.
+
+
+        Common `code` values include `invalid_request`, `invalid_api_key`, `not_authorized`, `not_found`, `insufficient_credits`, and `rate_limited`. Always branch on `code` (and `requirement.type` when present) rather than parsing `message`.
+
+        '
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          description: Human-readable error description. For display and logging only; do not branch on its exact text.
+        code:
+          type:
+          - string
+          - 'null'
+          description: Machine-readable error code in snake_case (e.g. `invalid_api_key`, `insufficient_credits`). `null` when no specific code applies.
+        requirement:
+          description: What is needed to resolve the error. Present when the error can be fixed by fulfilling a specific requirement (e.g. purchasing an add-on); `null` otherwise.
+          anyOf:
+          - $ref: '#/components/schemas/ErrorRequirement'
+          - type: 'null'
+        internalErrorCode:
+          type:
+          - string
+          - 'null'
+          description: Opaque internal error code for debugging. Include this when contacting support. `null` when not applicable.
+    FileSource:
+      type: object
+      description: A rendition source for a file (e.g. thumbnail, preview, download). Contains a signed URL and metadata.
+      required:
+      - status
+      properties:
+        status:
+          type: string
+          enum:
+          - pending
+          - ready
+          - failed
+          - skipped
+          description: '`pending`: asset is still processing or has not been hydrated yet. `ready`: signed URL is available. `failed`: rendition generation failed. `skipped`: rendition does not apply to this file type (e.g. thumbnail for audio).'
+        url:
+          type:
+          - string
+          - 'null'
+          description: Signed URL. Present when status is `ready` and file has been recently hydrated. If missing, call the hydrate endpoint.
+        expiresAt:
+          type:
+          - integer
+          - 'null'
+          description: Seconds since epoch (Unix timestamp) when the signed URL expires.
+        width:
+          type:
+          - integer
+          - 'null'
+          description: Rendition width in pixels, when known.
+        height:
+          type:
+          - integer
+          - 'null'
+          description: Rendition height in pixels, when known.
+        fileBytes:
+          type:
+          - integer
+          - 'null'
+          description: File size in bytes, when known.
+    TextToSpeechRequest:
+      type: object
+      required:
+      - ttsText
+      - voiceId
+      properties:
+        ttsText:
+          type: string
+        voiceId:
+          type: string
+          description: Catalog `displayName` (e.g. `Matilda`) or voice id from `GET /v1/resources/tts-voices` (e.g. `vg_voic_...`). Only voices with `supportsDirectToolExecution` set to true are accepted.
+        speechLanguageCode:
+          type:
+          - string
+          - 'null'
+          description: ISO-639-1 language hint for pronunciation (e.g. `en`, `es`, `zh`).
+        pronunciationReplacements:
+          type: array
+          items:
+            $ref: '#/components/schemas/PronunciationReplacement'
+        autoExpandPronunciationReplacements:
+          type: boolean
+          description: When true, automatically expands numbers, symbols, acronyms, and other non-word tokens into their spoken forms before synthesis so the voice pronounces them correctly (e.g. `$100` → `one hundred dollars`, `NASA` → `nasa`, `3rd` → `third`). Defaults to false when omitted.
+        voiceSpeed:
+          type: number
+          minimum: 0.5
+          maximum: 2
+          description: Speech rate multiplier, between 0.5 (half speed) and 2 (double speed). Defaults to the voice's default speed.
+        numResults:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 1
+          description: Number of output results to generate. Defaults to 1.
+        isOutputTemporary:
+          type: boolean
+          default: false
+          description: When true, generated files are temporary. Temporary files are guaranteed to be available for 24 hours, after which they may be archived at any time. Temporary files are not analyzed (no description, transcript, or embedding will be generated), so they will not appear in search results. Defaults to false.
+        hideFromUi:
+          type: boolean
+          default: false
+          description: When true, generated files are hidden from the VideoGen Media page by default. They remain accessible through the API. Defaults to false.
+    JobStatus:
+      type: string
+      description: Lifecycle status shared by every asynchronous job (tool executions, workflow runs, remix actions, project exports, and timeline interchange jobs). `pending` and `running` are in-progress; `succeeded`, `failed`, and `cancelled` are terminal.
+      enum:
+      - pending
+      - running
+      - succeeded
+      - failed
+      - cancelled
+    AspectRatio:
+      type: object
+      required:
+      - width
+      - height
+      description: Aspect ratio as a width:height pair (e.g. 16 and 9 for 16:9). Not pixel dimensions.
+      properties:
+        width:
+          type: integer
+          minimum: 1
+        height:
+          type: integer
+          minimum: 1
     GenerateImageRequest:
       type: object
       required:
@@ -1040,41 +1192,37 @@ components:
           type: boolean
           default: false
           description: When true, generated files are hidden from the VideoGen Media page by default. They remain accessible through the API. Defaults to false.
-    MotionGraphicSubToolMode:
-      type: string
-      enum:
-      - AUTO
-      - ENABLED
-      - DISABLED
-      description: Access mode for a motion graphic capability. AUTO uses the capability only when it is available on your plan (generated video clips require a paid plan). ENABLED forces the capability on and returns an upgrade error if your plan lacks it. DISABLED prevents the motion graphic from using the capability.
-    TextToSpeechRequest:
+    StartToolExecutionResponse:
+      type: object
+      description: Returned when a tool execution is started. Use `toolExecutionId` to poll for results or cancel.
+      required:
+      - toolExecutionId
+      properties:
+        toolExecutionId:
+          type: string
+          description: Execution id (e.g. `vg_tool_...`).
+    GenerateSoundEffectRequest:
       type: object
       required:
-      - ttsText
-      - voiceId
+      - prompt
       properties:
-        ttsText:
+        prompt:
           type: string
-        voiceId:
-          type: string
-          description: Catalog `displayName` (e.g. `Matilda`) or voice id from `GET /v1/resources/tts-voices` (e.g. `vg_voic_...`). Only voices with `supportsDirectToolExecution` set to true are accepted.
-        speechLanguageCode:
+          description: A text description of the sound effect to generate.
+        durationSeconds:
           type:
-          - string
+          - number
           - 'null'
-          description: ISO-639-1 language hint for pronunciation (e.g. `en`, `es`, `zh`).
-        pronunciationReplacements:
-          type: array
-          items:
-            $ref: '#/components/schemas/PronunciationReplacement'
-        autoExpandPronunciationReplacements:
-          type: boolean
-          description: When true, automatically expands numbers, symbols, acronyms, and other non-word tokens into their spoken forms before synthesis so the voice pronounces them correctly (e.g. `$100` → `one hundred dollars`, `NASA` → `nasa`, `3rd` → `third`). Defaults to false when omitted.
-        voiceSpeed:
-          type: number
-          minimum: 0.5
-          maximum: 2
-          description: Speech rate multiplier, between 0.5 (half speed) and 2 (double speed). Defaults to the voice's default speed.
+          minimum: 1
+          maximum: 30
+          description: Desired length of the sound effect in seconds, between 1 and 30. Defaults to about 10 seconds when omitted.
+        promptInfluence:
+          type:
+          - number
+          - 'null'
+          minimum: 0
+          maximum: 1
+          description: How closely the generated sound effect follows the prompt, between 0 (more creative, more variation) and 1 (more literal, less variation). Defaults to a balanced value when omitted.
         numResults:
           type: integer
           minimum: 1
@@ -1089,143 +1237,24 @@ components:
           type: boolean
           default: false
           description: When true, generated files are hidden from the VideoGen Media page by default. They remain accessible through the API. Defaults to false.
-    ToolSuccessResult:
-      type: object
-      description: Result for a single generated file. Only appears inside a succeeded execution's `results`, so every field below is always present.
-      required:
-      - fileId
-      - type
-      - downloadUrl
-      - downloadUrlExpiresAt
-      - thumbnailUrl
-      - thumbnailUrlExpiresAt
-      - file
-      properties:
-        fileId:
-          type: string
-          description: File id for the generated asset.
-        type:
-          $ref: '#/components/schemas/FileType'
-          description: File type.
-        downloadUrl:
-          type:
-          - string
-          - 'null'
-          format: uri
-          description: Private signed download URL for the generated file, valid for 7 days from when it was signed. Provided at the top level for convenience so you don't have to read it out of `file`. When you GET a single execution it is automatically re-signed if within an hour of expiring; list endpoints do not re-sign, so there it may be expired (check `downloadUrlExpiresAt`). See `downloadUrlExpiresAt` for the exact expiry. Null only in the rare case that the highest-quality rendition is still finalizing.
-        downloadUrlExpiresAt:
-          type:
-          - integer
-          - 'null'
-          description: Seconds since epoch (Unix timestamp) when `downloadUrl` expires. Null only when `downloadUrl` is null.
-        thumbnailUrl:
-          type:
-          - string
-          - 'null'
-          format: uri
-          description: Private signed thumbnail URL for the generated file, valid for 7 days from when it was signed. Provided at the top level for convenience so you don't have to read it out of `file`. Re-signed on the same terms as `downloadUrl` (single-execution GET re-signs when near expiry; list endpoints do not). Null for file types that have no thumbnail (e.g. audio).
-        thumbnailUrlExpiresAt:
-          type:
-          - integer
-          - 'null'
-          description: Seconds since epoch (Unix timestamp) when `thumbnailUrl` expires. Null when there is no thumbnail URL.
-        file:
-          description: Hydrated file metadata with signed download URLs (always present and hydrated for a succeeded result). Its signed URLs follow the same 24-hour validity and automatic re-signing as `downloadUrl`.
-          $ref: '#/components/schemas/FileInfo'
-    FileAnalysisMetadata:
-      type: object
-      description: 'Background analysis state for a file. Background analysis populates `description`, `transcript`, `durationSeconds`, and the search embedding after a file is uploaded or generated; this object lets you render a progress indicator while it runs (and skip rendering once it''s done).
-
-        '
-      required:
-      - analysisLoadingState
-      - analysisProgressPercentage
-      properties:
-        analysisLoadingState:
-          type: string
-          enum:
-          - UNATTEMPTED
-          - LOADING
-          - FULFILLED
-          - REJECTED
-          description: 'Coarse-grained analysis state.
-
-
-            - `UNATTEMPTED`: analysis has not started yet.
-
-            - `LOADING`: analysis is in progress.
-
-            - `FULFILLED`: analysis completed successfully. `description`, `transcript`, and `durationSeconds` are now populated where applicable for the file''s type.
-
-            - `REJECTED`: analysis failed permanently and will not be retried.
-
-            '
-        analysisProgressPercentage:
-          type: number
-          description: Progress in `[0, 100]`. Always `100` when `analysisLoadingState` is `FULFILLED`. Otherwise the most recent in-flight progress reported by the analysis task (or `0` if no progress has been reported yet).
-        analysisAttemptIndex:
-          type: integer
-          description: Zero-based index of the current analysis task attempt. Only present while analysis is still loading (`UNATTEMPTED` or `LOADING`); omitted once analysis reaches a terminal state.
-    ExecutedTool:
+    TranscriptWord:
       type: object
       required:
-      - toolExecutionId
-      - status
-      - toolType
-      - progressPercentage
-      - attemptIndex
-      - results
-      - error
+      - startSeconds
+      - endSeconds
+      - word
+      description: A single timed word of a transcript.
       properties:
-        toolExecutionId:
-          type: string
-          description: Execution id matching the original request.
-        status:
-          $ref: '#/components/schemas/JobStatus'
-        toolType:
-          type: string
-          description: Tool name (e.g. `GENERATE_IMAGE`, `TEXT_TO_SPEECH`).
-        progressPercentage:
+        startSeconds:
           type: number
           minimum: 0
-          maximum: 100
-          description: Completion progress for the current attempt (0-100). Always `100` when `status` is `succeeded`.
-        attemptIndex:
-          type: integer
-          minimum: 0
-          description: Zero-based index of the current or most recent execution attempt.
-        results:
-          type: array
-          description: One entry per generated result. Always present; empty until `status` is `succeeded`, then one entry per generated file (each with signed URLs and a hydrated `file`).
-          items:
-            $ref: '#/components/schemas/ToolSuccessResult'
-        error:
-          description: Error details. Always present; `null` unless `status` is `failed`.
-          anyOf:
-          - $ref: '#/components/schemas/ApiError'
-          - type: 'null'
-    ModelQuality:
-      type: string
-      enum:
-      - LOW
-      - STANDARD
-      - HIGH
-      - MAX
-      description: 'AI generation quality tier, shared across every generative feature (image, video, text, and so on). `LOW` is fastest and cheapest, `STANDARD` balances quality and cost, `HIGH` is higher quality, and `MAX` is the highest quality.
-
-
-        When a request omits the quality field, VideoGen falls back to your account''s **Default AI quality** for that feature, which you can change at [Account settings](https://app.videogen.io/settings/account). Not every feature supports every tier; unsupported tiers are rejected with an error (see each field''s description).
-
-        '
-    JobStatus:
-      type: string
-      description: Lifecycle status shared by every asynchronous job (tool executions, workflow runs, remix actions, project exports, and timeline interchange jobs). `pending` and `running` are in-progress; `succeeded`, `failed`, and `cancelled` are terminal.
-      enum:
-      - pending
-      - running
-      - succeeded
-      - failed
-      - cancelled
+          description: Start time of the word in seconds from the beginning of the audio.
+        endSeconds:
+          type: number
+          description: End time of the word in seconds from the beginning of the audio. Must be greater than `startSeconds`.
+        word:
+          type: string
+          description: The spoken word, used verbatim for narration timing and captions.
     ContentPolicyConfig:
       type: object
       description: Controls how content-policy rejections are handled during generation.
@@ -1236,34 +1265,16 @@ components:
           maximum: 4
           default: 0
           description: Maximum number of automatic prompt rewrites to attempt after a content-policy rejection before failing. Must be an integer between 0 and 4. 0 (the default) fails on the first rejection and returns the moderation error so you can revise the prompt yourself. Higher values let the request automatically rephrase and retry the prompt.
-    ToolExecutionListResponse:
-      type: object
-      description: Paginated list of API-started tool executions, most recently created first.
-      required:
-      - toolExecutions
-      - hasMore
-      - nextCursor
-      properties:
-        toolExecutions:
-          type: array
-          items:
-            $ref: '#/components/schemas/ExecutedTool'
-        hasMore:
-          type: boolean
-          description: When true, there are more executions available. Pass `nextCursor` as the `cursor` query param to fetch the next page.
-        nextCursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor to fetch the next page. `null` when `hasMore` is false.
-    GenerateMusicRequest:
+    VideoAssetRequest:
       type: object
       required:
-      - prompt
+      - videoFileId
       properties:
-        prompt:
+        videoFileId:
           type: string
-          description: A text description of the music to generate. Include genre, mood, instrumentation, and tempo for best results.
+          description: File id of the source video (e.g. `vg_file_...`). Upload a file first via `POST /v1/files/upload`, then pass the returned id here.
+        watermarkMode:
+          $ref: '#/components/schemas/WatermarkMode'
         numResults:
           type: integer
           minimum: 1
@@ -1278,32 +1289,7 @@ components:
           type: boolean
           default: false
           description: When true, generated files are hidden from the VideoGen Media page by default. They remain accessible through the API. Defaults to false.
-    FileType:
-      type: string
-      enum:
-      - IMAGE
-      - VIDEO
-      - AUDIO
-      - PDF
-      - SLIDESHOW
-      - TEXT
-      - LOTTIE
-      description: File type. `TEXT` covers plain-text and editor-interchange documents; `LOTTIE` is a JSON animation.
   parameters:
-    ToolExecutionIdPath:
-      name: toolExecutionId
-      in: path
-      required: true
-      schema:
-        type: string
-      description: The tool execution id returned when the tool was started.
-    PaginationCursor:
-      name: cursor
-      in: query
-      required: false
-      schema:
-        type: string
-      description: Opaque pagination cursor returned as `nextCursor` by the previous page. Omit on the first request. Cursors are tied to the endpoint that produced them and must be passed unmodified. See [Pagination](/pagination).
     PaginationLimit:
       name: limit
       in: query
@@ -1322,6 +1308,20 @@ components:
         type: boolean
         default: false
       description: When true, returns only items created by the API key's owner. When false (default), returns all items accessible to the team.
+    PaginationCursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Opaque pagination cursor returned as `nextCursor` by the previous page. Omit on the first request. Cursors are tied to the endpoint that produced them and must be passed unmodified. See [Pagination](/pagination).
+    ToolExecutionIdPath:
+      name: toolExecutionId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The tool execution id returned when the tool was started.
   securitySchemes:
     bearerAuth:
       type: http
