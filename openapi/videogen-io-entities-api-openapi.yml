@@ -465,3 +465,9 @@ components:
       scheme: bearer
       bearerFormat: opaque
       description: API key from [app.videogen.io/api](https://app.videogen.io/api). The full key is only shown once when you create it.
+x-provenance:
+  method: harvested
+  publisher: VideoGen
+  source: https://api.videogen.io/openapi.json
+  note: split by refine-openapis from the provider's own published document, verified by fetch (openapi/_original/*.fetch.json);
+    stamped by stamp-openapi-provenance.py (roadmap#793)
