@@ -64,5 +64,152 @@
 > Full detail: **[Where this data comes from](https://apievangelist.com/about/where-our-data-comes-from)**
 <!-- API-EVANGELIST-PROVENANCE:END -->
 
-VideoGen is a company surfaced via the API Evangelist harvest backlog (source: new-submission) and added to the network as a stub for full-pipeline profiling.
-- https://videogen.io
+VideoGen provides an AI-powered platform that automates video creation from scripts, voiceovers, and storyboards. Users can generate explainer videos, ads, tutorials, and social media clips at scale via a single API call. The service includes tools for text‑to‑video, image‑to‑video, AI avatars, and customizable workflows, targeting creators, marketers, and enterprises seeking fast, cost‑effective video production.
+
+**Areas:** Company · Artificial Intelligence · Video · Automation · Platform
+
+## VideoGen on APIs.io
+
+Everything profiled for VideoGen is published on APIs.io rather than in this repository. Start at the provider page — **[apis.io/providers/videogen-io/](https://apis.io/providers/videogen-io/)** — or go straight to one of the APIs or properties below.
+
+### APIs (11)
+
+- [VideoGen Account API](https://apis.io/apis/videogen-io/videogen-io-account-api/) — Look up the account and team behind the API key. Useful as a connection test to confirm a key is valid.
+- [VideoGen Assistant API](https://apis.io/apis/videogen-io/videogen-io-assistant-api/) — Converse with the VideoGen AI assistant inside a project. Start a chat, send messages, and act on the assistant's suggestions (pick a workflow, approve a…
+- [VideoGen Entities API](https://apis.io/apis/videogen-io/videogen-io-entities-api/) — Reusable actors and visual styles. Attach their reference images to workflows for consistent characters and looks across generations.
+- [VideoGen Files API](https://apis.io/apis/videogen-io/videogen-io-files-api/) — List and retrieve metadata for generated files.
+- [VideoGen Projects API](https://apis.io/apis/videogen-io/videogen-io-projects-api/) — Read project metadata and status.
+- [VideoGen Resources API](https://apis.io/apis/videogen-io/videogen-io-resources-api/) — Discover available TTS voices and supported languages to use in requests.
+- [VideoGen Text API](https://apis.io/apis/videogen-io/videogen-io-text-api/) — Generate text with a general-purpose language model. Synchronous — the response includes the generated text.
+- [VideoGen Tools API](https://apis.io/apis/videogen-io/videogen-io-tools-api/) — Generate images, videos, audio, and more. All tool endpoints are asynchronous.
+- [VideoGen Webhook events API](https://apis.io/apis/videogen-io/videogen-io-webhook-events-api/) — Event payloads delivered to your registered webhook endpoints.
+- [VideoGen Webhooks API](https://apis.io/apis/videogen-io/videogen-io-webhooks-api/) — Register endpoints to receive `tool_execution.*` and `workflow_run.*` events instead of polling.
+- [VideoGen Workflows API](https://apis.io/apis/videogen-io/videogen-io-workflows-api/) — End-to-end async video workflows. Each endpoint starts a workflow run that creates a project and generates a video.
+
+### Published properties
+
+Each property below is a page on APIs.io carrying the machine-readable artifact and what it says.
+
+#### AsyncAPI (1)
+
+Event-driven and webhook contracts.
+
+- [Videogen Io Webhooks](https://apis.io/asyncapis/videogen-io/videogen-io-webhooks/)
+
+#### Agentic access (1)
+
+Which operations an agent can call, which act, and which need a human in the loop.
+
+- [Videogen Io Agentic Access](https://apis.io/agentic-access/videogen-io/videogen-io-agentic-access/)
+
+#### JSON Schema (6)
+
+The data models the API reads and writes.
+
+- [FileInfo](https://apis.io/schemas/videogen-io/videogen-io-file-info/)
+- [GenerateVideoClipRequest](https://apis.io/schemas/videogen-io/videogen-io-generate-video-clip-request/)
+- [ScriptToVideoRequest](https://apis.io/schemas/videogen-io/videogen-io-script-to-video-request/)
+- [SlideshowToVideoRequest](https://apis.io/schemas/videogen-io/videogen-io-slideshow-to-video-request/)
+- [VoiceoverToVideoRequest](https://apis.io/schemas/videogen-io/videogen-io-voiceover-to-video-request/)
+- [WorkflowRun](https://apis.io/schemas/videogen-io/videogen-io-workflow-run/)
+
+#### JSON-LD (1)
+
+Linked-data contexts for the provider's vocabulary.
+
+- [Videogen Io Context](https://apis.io/jsonld/videogen-io/videogen-io-context/)
+
+#### Governance rules (1)
+
+Spectral rulesets for the provider's contracts.
+
+- [VideoGen API Rules](https://apis.io/rules/videogen-io/videogen-io-rules/)
+
+#### Security (2)
+
+Authentication, trust centre, and vulnerability disclosure.
+
+- [Videogen Io Authentication](https://apis.io/security/videogen-io/videogen-io-authentication/)
+- [Videogen Io Domain Security](https://apis.io/security/videogen-io/videogen-io-domain-security/)
+
+#### Plans and pricing (1)
+
+Published plans, tiers and prices.
+
+- [Videogen Io Plans Pricing](https://apis.io/plans/videogen-io/videogen-io-plans-pricing/)
+
+#### Rate limits (1)
+
+Published request limits.
+
+- [Videogen Io Rate Limits](https://apis.io/rate-limits/videogen-io/videogen-io-rate-limits/)
+
+## Where to find this API
+
+Links to the company's own pages. This repository publishes no copy of their specifications — the canonical document is theirs and lives at the URLs below.
+
+- [Website](https://videogen.io)
+- [Documentation](https://docs.videogen.io/introduction)
+- [Getting started](https://docs.videogen.io/getting-started)
+- [Pricing](https://videogen.io/pricing)
+- [Sign up](https://app.videogen.io/signup?internalReferrerPath=%2F)
+- [Support](https://help.videogen.io/en/)
+- [Changelog](https://videogen.io/changelog)
+- [Blog](https://videogen.io/blog)
+- [Terms of service](https://videogen.io/terms-of-service)
+- [Privacy policy](https://videogen.io/privacy-policy)
+
+## API Evangelist rating
+
+**Kin Score 64.8** — strong · rubric 0.25.0 · scored 2026-10-23
+
+| Facet | Score |
+|---|---|
+| Discoverability | 75.0 |
+| Contract quality | 68.8 |
+| Contract governance | 22.0 |
+| Operational transparency | 65.8 |
+| Developer ergonomics | 66.1 |
+| Access clarity | 76.3 |
+
+**Agent readiness 34.1** — agent-ready
+
+| Agent-readiness dimension | Result |
+|---|---|
+| Spec Presence | yes |
+| Agentic Access | derived (partial credit) |
+| Reversibility Documented | documented (partial credit) |
+| MCP Server | — |
+| Auth Clarity | bearer (partial credit) |
+| Idempotency | — |
+| Error Semantics | derived (partial credit) |
+| OpenAPI Examples | — |
+| Rate Limit Signal | documented (partial credit) |
+| Event Surface Described | yes |
+| Agent Skills | derived (partial credit) |
+| Well Known Catalog | yes |
+| Consent Identity | — |
+| Agent Card | — |
+| Dry Run Mode | — |
+| Delegated Identity | — |
+| Protected Resource Metadata | verified |
+| Dynamic Client Registration | — |
+| Agentic Commerce | — |
+| Pagination Ratio | — |
+| Operation Distinctiveness | distinct |
+
+**Regulatory alignment 22.7** — Horizontal (data, software, accessibility, platform)
+
+The rubric is published at [github.com/api-evangelist/kin-score](https://github.com/api-evangelist/kin-score). The per-check breakdown behind these numbers — which checks were earned, partial or missed — along with score history and how this provider compares to its peers, is available at [apis.io/providers/videogen-io/](https://apis.io/providers/videogen-io/).
+
+## How this profile is made
+
+API Evangelist profiles a company's public API surface the way a developer would find it: the website, developer portal and documentation, the specifications it publishes, its public repositories, and its pricing, status and changelog pages. From that it derives the properties above — contracts split per API, workflows, schemas, collections, governance rules, plans and rate limits — and scores them against the published [Kin Score rubric](https://github.com/api-evangelist/kin-score).
+
+The artifacts are published on [APIs.io](https://apis.io), not in this repository. This repository is the public record for VideoGen: the place to say something is wrong, missing or out of date, and to ask for a re-score or a removal.
+
+## Open an issue
+
+- **Something about this listing** — a wrong description, a missing API, a stale artifact or a question about the rating: [open an issue on this repository](https://github.com/api-evangelist/videogen-io/issues/new).
+- **A new API, or one that is not in the catalog yet** — [submit it on APIs.io](https://apis.io/add/).
+- **Anything else** — [the APIs.io inbox](https://github.com/api-search/inbox/issues/new) or [info@apievangelist.com](mailto:info@apievangelist.com).
